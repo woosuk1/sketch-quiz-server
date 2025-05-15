@@ -1,51 +1,91 @@
+// CanvasHandler.java
 package itcen.whiteboardserver.util;
 
-import org.springframework.web.socket.CloseStatus;
-import org.springframework.web.socket.TextMessage;
-import org.springframework.web.socket.WebSocketSession;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import itcen.whiteboardserver.entity.Stroke;
+import itcen.whiteboardserver.repository.StrokeRepository;
+import org.springframework.stereotype.Component;
+import org.springframework.web.socket.*;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
-import java.util.Set;
+import java.io.IOException;
+import java.net.URI;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+@Component
 public class CanvasHandler extends TextWebSocketHandler {
 
-    private final Set<WebSocketSession> sessions = ConcurrentHashMap.newKeySet();
+    private final Map<String, Set<WebSocketSession>> roomSessions = new ConcurrentHashMap<>();
+    private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+    private final StrokeRepository strokeRepo;
 
-    @Override
-    public void afterConnectionEstablished(WebSocketSession session) {
-        System.out.println("✅ WebSocket 연결됨: " + session.getId());
-        sessions.add(session);
+    public CanvasHandler(StrokeRepository strokeRepo) {
+        this.strokeRepo = strokeRepo;
     }
 
     @Override
-    protected void handleTextMessage(WebSocketSession session, TextMessage message) {
-        System.out.println("📩 메시지 수신 [" + session.getId() + "]: " + message.getPayload());
+    public void afterConnectionEstablished(WebSocketSession session) throws IOException {
+        String roomId = getRoomId(session);
+        roomSessions.computeIfAbsent(roomId, k -> ConcurrentHashMap.newKeySet()).add(session);
 
-        for (WebSocketSession s : sessions) {
+        List<Stroke> strokes = strokeRepo.findByRoomId(roomId);
+        for (Stroke stroke : strokes) {
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("type", "stroke");
+            payload.put("userId", stroke.getUserId());
+            payload.put("color", stroke.getColor());
+            payload.put("width", stroke.getWidth());
+            payload.put("points", stroke.getPoints());
+
+            session.sendMessage(new TextMessage(objectMapper.writeValueAsString(payload)));
+        }
+    }
+
+    @Override
+    protected void handleTextMessage(WebSocketSession session, TextMessage message) throws IOException {
+        JsonNode json = objectMapper.readTree(message.getPayload());
+        String type = json.get("type").asText();
+        String userId = json.get("userId").asText();
+        String roomId = getRoomId(session);
+
+        if ("stroke".equals(type)) {
+            Stroke stroke = objectMapper.treeToValue(json, Stroke.class);
+            stroke.setRoomId(roomId);
+            strokeRepo.save(stroke);
+        } else if ("undo".equals(type)) {
+            List<Stroke> userStrokes = strokeRepo.findByRoomId(roomId).stream()
+                    .filter(s -> s.getUserId().equals(userId))
+                    .sorted(Comparator.comparing(Stroke::getCreatedAt).reversed())
+                    .toList();
+            if (!userStrokes.isEmpty()) {
+                strokeRepo.deleteById(userStrokes.get(0).getId());
+            }
+        }
+
+        // broadcast to room only
+        for (WebSocketSession s : roomSessions.getOrDefault(roomId, Set.of())) {
             if (s.isOpen()) {
-                try {
-                    s.sendMessage(message);
-                } catch (Exception e) {
-                    System.err.println("❌ 메시지 전송 실패 to [" + s.getId() + "]: " + e.getMessage());
-                    sessions.remove(s); // ❗ 죽은 세션 제거
-                }
-            } else {
-                sessions.remove(s); // ❗ 열린 상태가 아니면 제거
+                s.sendMessage(message);
             }
         }
     }
 
-
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
-        System.out.println("❎ WebSocket 연결 종료됨: " + session.getId() + ", 상태: " + status);
-        sessions.remove(session);
+        String roomId = getRoomId(session);
+        roomSessions.getOrDefault(roomId, Set.of()).remove(session);
     }
 
-    @Override
-    public void handleTransportError(WebSocketSession session, Throwable exception) {
-        System.err.println("🚨 전송 중 오류 발생 [" + session.getId() + "]: " + exception.getMessage());
-        exception.printStackTrace();
+    private String getRoomId(WebSocketSession session) {
+        URI uri = session.getUri();
+        if (uri == null) return "default";
+        String query = uri.getQuery();
+        if (query != null && query.startsWith("roomId=")) {
+            return query.split("=")[1];
+        }
+        return "default";
     }
 }
