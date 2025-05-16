@@ -4,9 +4,13 @@ package itcen.whiteboardserver.util;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import itcen.whiteboardserver.domain.SocketConnInfo;
+import itcen.whiteboardserver.entity.Chat;
 import itcen.whiteboardserver.entity.Stroke;
+import itcen.whiteboardserver.repository.ChatRepository;
 import itcen.whiteboardserver.repository.StrokeRepository;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.socket.*;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
@@ -21,9 +25,11 @@ public class CanvasHandler extends TextWebSocketHandler {
     private final Map<String, Set<WebSocketSession>> roomSessions = new ConcurrentHashMap<>();
     private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
     private final StrokeRepository strokeRepo;
+    private final ChatRepository chatRepository;
 
-    public CanvasHandler(StrokeRepository strokeRepo) {
+    public CanvasHandler(StrokeRepository strokeRepo, ChatRepository chatRepository) {
         this.strokeRepo = strokeRepo;
+        this.chatRepository = chatRepository;
     }
 
     @Override
@@ -39,6 +45,18 @@ public class CanvasHandler extends TextWebSocketHandler {
             payload.put("color", stroke.getColor());
             payload.put("width", stroke.getWidth());
             payload.put("points", stroke.getPoints());
+
+            session.sendMessage(new TextMessage(objectMapper.writeValueAsString(payload)));
+        }
+
+        List<Chat> chats = chatRepository.findByRoomIdOrderByCreatedAtAsc(roomId);
+        for (Chat chat : chats) {
+            Map<String, String> payload = new HashMap<>();
+
+            payload.put("type", "chat");
+            payload.put("chatType", chat.getChatType().name());
+            payload.put("userId", chat.getUserId());
+            payload.put("message", chat.getMessage());
 
             session.sendMessage(new TextMessage(objectMapper.writeValueAsString(payload)));
         }
@@ -63,6 +81,10 @@ public class CanvasHandler extends TextWebSocketHandler {
             if (!userStrokes.isEmpty()) {
                 strokeRepo.deleteById(userStrokes.get(0).getId());
             }
+        } else if ("chat".equals((type))) {
+            Chat chat = objectMapper.treeToValue(json, Chat.class);
+            chat.setRoomId(roomId);
+            chatRepository.save(chat);
         }
 
         // broadcast to room only
