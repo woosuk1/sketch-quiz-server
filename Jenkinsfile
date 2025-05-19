@@ -38,7 +38,7 @@ pipeline {
           sh """
             ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP '
               if [ ! -d ~/sketch-quiz-server ]; then
-                git clone https://github.com/itcen-project-2team/realtime-sharing-notebook-server-Test.git ~/sketch-quiz-server
+                git clone https://github.com/itcen-project-2team/sketch-quiz-server.git ~/sketch-quiz-server
               fi
 
               cd ~/sketch-quiz-server
