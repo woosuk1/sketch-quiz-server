@@ -2,11 +2,10 @@ pipeline {
   agent any
 
   environment {
-    SERVER_IP = '10.0.2.179'
+    SERVER_IP = "${env.SERVER_IP}"  // Jenkins 환경 설정에서 가져옴
   }
 
   stages {
-
     stage('Clone Source') {
       steps {
         git url: 'https://github.com/itcen-project-2team/sketch-quiz-server', branch: 'main'
@@ -50,7 +49,7 @@ pipeline {
             '
           """
         }
-      } //1234
+      }
     }
   }
 }
