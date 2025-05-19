@@ -3,8 +3,8 @@ pipeline {
 
   environment {
     DOCKERHUB_CREDENTIALS = 'dockerhub-cred'
-    IMAGE_NAME = 'visionn7111/sketch-quiz-server'
-    SERVER_IP = '10.0.2.179' // 프라이빗 WAS 서버 IP
+    IMAGE_NAME = 'visionn7111/whiteboard-server'
+    SERVER_IP = '10.0.2.179'
   }
 
   stages {
@@ -25,14 +25,14 @@ pipeline {
       steps {
         sshagent(credentials: ['webserver-ssh-key']) {
           sh """
-            # WAS 서버에서 기존 프로젝트 삭제 및 새 폴더 생성
+            # 1. 기존 프로젝트 디렉토리 삭제 후 생성
             ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP '
-              rm -rf ~/sketch-quiz-server
-              mkdir -p ~/sketch-quiz-server
+              rm -rf ~/whiteboard-server
+              mkdir -p ~/whiteboard-server
             '
 
-            # 현재 Jenkins 작업 디렉토리 전체 복사 (숨김파일 포함)
-            scp -o StrictHostKeyChecking=no -r * .[^.]* ubuntu@$SERVER_IP:~/sketch-quiz-server
+            # 2. Jenkins 워크스페이스 전체 복사 (숨김 파일 포함)
+            scp -o StrictHostKeyChecking=no -r * .[^.]* ubuntu@$SERVER_IP:~/whiteboard-server
           """
         }
       }
@@ -43,17 +43,17 @@ pipeline {
         sshagent(credentials: ['webserver-ssh-key']) {
           sh """
             ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP '
-              cd ~/sketch-quiz-server
+              cd ~/whiteboard-server
 
-              # docker-compose.yml 존재 확인
+              # 필수 파일 확인
               if [ ! -f docker-compose.yml ]; then
                 echo "docker-compose.yml 파일이 없습니다. 배포 중단." && exit 1
               fi
 
-              # 충돌 방지: 이미 존재하는 mongodb 컨테이너 강제 제거
+              # 기존 mongodb 컨테이너 제거 (충돌 방지)
               docker rm -f mongodb || true
 
-              # 기존 컨테이너 및 네트워크 정리 후 재배포
+              # 기존 컨테이너 종료 및 재시작
               docker-compose down || true
               docker-compose up -d --build
             '
