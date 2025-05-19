@@ -4,7 +4,7 @@ pipeline {
   environment {
     DOCKERHUB_CREDENTIALS = 'dockerhub-cred'
     IMAGE_NAME = 'visionn7111/sketch-quiz-server'
-    SERVER_IP = '10.0.2.179' // 프라이빗 WAS 서버 IP
+    SERVER_IP = '10.0.2.179'
   }
 
   stages {
@@ -26,7 +26,7 @@ pipeline {
         sshagent(credentials: ['webserver-ssh-key']) {
           sh """
             ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP 'rm -rf ~/sketch-quiz-server'
-            scp -o StrictHostKeyChecking=no -r . ubuntu@$SERVER_IP:~/sketch-quiz-server
+            scp -o StrictHostKeyChecking=no -r * .[^.]* ubuntu@$SERVER_IP:~/sketch-quiz-server
           """
         }
       }
