@@ -4,7 +4,7 @@ pipeline {
   environment {
     DOCKERHUB_CREDENTIALS = 'dockerhub-cred'
     IMAGE_NAME = 'visionn7111/sketch-quiz-server'
-    SERVER_IP = '10.0.2.179' // 프라이빗 WAS 서버 IP
+    SERVER_IP = '10.0.2.179' 
   }
 
   stages {
@@ -37,7 +37,6 @@ pipeline {
         sshagent(credentials: ['webserver-ssh-key']) {
           sh """
             ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP '
-              # 깃 저장소가 아니면 초기화 후 다시 클론
               if [ ! -d ~/sketch-quiz-server/.git ]; then
                 rm -rf ~/sketch-quiz-server
                 git clone https://github.com/itcen-project-2team/sketch-quiz-server.git ~/sketch-quiz-server
