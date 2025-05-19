@@ -9,7 +9,7 @@ pipeline {
 
   stages {
 
-    stage('Clone') {
+    stage('Clone Source') {
       steps {
         git url: 'https://github.com/itcen-project-2team/sketch-quiz-server', branch: 'main'
       }
@@ -21,30 +21,23 @@ pipeline {
       }
     }
 
-    stage('Copy JAR to WAS Server') {
+    stage('Copy Entire Project to WAS') {
       steps {
         sshagent(credentials: ['webserver-ssh-key']) {
           sh """
-            ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP '
-              if [ ! -d ~/sketch-quiz-server/.git ]; then
-                rm -rf ~/sketch-quiz-server
-                git clone https://github.com/itcen-project-2team/sketch-quiz-server.git ~/sketch-quiz-server
-              fi
-            '
-
-            scp -o StrictHostKeyChecking=no build/libs/*.jar ubuntu@$SERVER_IP:~/sketch-quiz-server/build/libs/
+            ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP 'rm -rf ~/sketch-quiz-server'
+            scp -o StrictHostKeyChecking=no -r . ubuntu@$SERVER_IP:~/sketch-quiz-server
           """
         }
       }
     }
 
-    stage('Deploy to WAS Server') {
+    stage('Deploy to WAS') {
       steps {
         sshagent(credentials: ['webserver-ssh-key']) {
           sh """
             ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP '
               cd ~/sketch-quiz-server
-              git pull
 
               if [ ! -f docker-compose.yml ]; then
                 echo "docker-compose.yml 파일이 없습니다. 배포 중단." && exit 1
