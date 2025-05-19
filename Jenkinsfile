@@ -25,8 +25,8 @@ pipeline {
       steps {
         sshagent(credentials: ['webserver-ssh-key']) {
           sh """
-            ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP 'mkdir -p ~/whiteboard-backend/build/libs'
-            scp -o StrictHostKeyChecking=no build/libs/*.jar ubuntu@$SERVER_IP:~/whiteboard-backend/build/libs/
+            ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP 'mkdir -p ~/sketch-quiz-server/build/libs'
+            scp -o StrictHostKeyChecking=no build/libs/*.jar ubuntu@$SERVER_IP:~/sketch-quiz-server/build/libs/
           """
         }
       }
@@ -37,11 +37,11 @@ pipeline {
         sshagent(credentials: ['webserver-ssh-key']) {
           sh """
             ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP '
-              if [ ! -d ~/whiteboard-backend ]; then
-                git clone https://github.com/itcen-project-2team/realtime-sharing-notebook-server-Test.git ~/whiteboard-backend
+              if [ ! -d ~/sketch-quiz-server ]; then
+                git clone https://github.com/itcen-project-2team/realtime-sharing-notebook-server-Test.git ~/sketch-quiz-server
               fi
 
-              cd ~/whiteboard-backend
+              cd ~/sketch-quiz-server
               git pull
 
               if [ ! -f docker-compose.yml ]; then
