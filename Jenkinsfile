@@ -25,8 +25,14 @@ pipeline {
       steps {
         sshagent(credentials: ['webserver-ssh-key']) {
           sh """
-            ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP 'rm -rf ~/sketch-quiz-server'
-            scp -o StrictHostKeyChecking=no -r * .[^.]* ubuntu@$SERVER_IP:~/sketch-quiz-server
+            # 1. 디렉토리 제거 후 새로 생성
+            ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP '
+              rm -rf ~/sketch-quiz-server
+              mkdir -p ~/sketch-quiz-server
+            '
+
+            # 2. 프로젝트 전체 전송
+            scp -o StrictHostKeyChecking=no -r Jenkinsfile README.md build build.gradle docker-compose.yml dockerfile gradle gradlew gradlew.bat run-mongodb.sh settings.gradle src .git .gitattributes .gitignore .gradle ubuntu@$SERVER_IP:~/sketch-quiz-server
           """
         }
       }
