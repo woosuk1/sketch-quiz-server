@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+    volumes:
+      - mongo-data:/data/db
+
+  spring:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sketch-auiz-server
+    ports:
+      - "8080:8080"
+    environment:
+      MONGODB_URI: mongodb://root:root@mongodb:27017/whiteboard?authSource=admin
+    depends_on:
+      - mongodb
+
+volumes:
+  mongo-data:
