@@ -1,5 +1,5 @@
 package itcen.whiteboardserver.config;
-import itcen.whiteboardserver.util.CanvasHandler;
+import itcen.whiteboardserver.websocket.CanvasHandler;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.config.annotation.WebSocketConfigurer;

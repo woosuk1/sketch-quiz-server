@@ -1,9 +1,7 @@
 package itcen.whiteboardserver.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.mongodb.lang.NonNull;
-import com.mongodb.lang.Nullable;
-import itcen.whiteboardserver.util.ChatType;
+import itcen.whiteboardserver.websocket.ChatType;
 import lombok.Data;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;

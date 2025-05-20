@@ -1,16 +1,14 @@
 // CanvasHandler.java
-package itcen.whiteboardserver.util;
+package itcen.whiteboardserver.websocket;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import itcen.whiteboardserver.domain.SocketConnInfo;
 import itcen.whiteboardserver.entity.Chat;
 import itcen.whiteboardserver.entity.Stroke;
 import itcen.whiteboardserver.repository.ChatRepository;
 import itcen.whiteboardserver.repository.StrokeRepository;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.socket.*;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
