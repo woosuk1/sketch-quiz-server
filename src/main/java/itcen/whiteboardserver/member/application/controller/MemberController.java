@@ -1,5 +1,6 @@
 package itcen.whiteboardserver.member.application.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
 import itcen.whiteboardserver.member.application.dto.MemberDTO;
 import itcen.whiteboardserver.member.application.service.MemberService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,8 +25,15 @@ public class MemberController {
     }
 
     @GetMapping("/{id}")
+    @Operation(
+            summary = "멤버 조회",
+            description =
+                    """
+                    멤버 id를 기반으로 멤버 정보를 조회해옵니다.
+                    후에는 JWT 토큰을 통해 멤버 정보를 조회할 것입니다.
+                    """
+    )
     public ResponseEntity<Map<String, Object>> getMember(@PathVariable("id") Long id) {
-        // Logic to retrieve member by ID
         MemberDTO member = memberService.getMemberById(id);
         return ResponseEntity.ok()
                 .body(Map.of(
