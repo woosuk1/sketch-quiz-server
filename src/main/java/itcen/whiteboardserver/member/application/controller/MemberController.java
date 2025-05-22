@@ -29,18 +29,13 @@ public class MemberController {
             summary = "멤버 조회",
             description =
                     """
-                    멤버 id를 기반으로 멤버 정보를 조회해옵니다.
+                    멤버 id를 기반으로 멤버 정보를 조회해옵니다.\n
                     후에는 JWT 토큰을 통해 멤버 정보를 조회할 것입니다.
                     """
     )
-    public ResponseEntity<Map<String, Object>> getMember(@PathVariable("id") Long id) {
+    public ResponseEntity<MemberDTO> getMember(@PathVariable("id") Long id) {
         MemberDTO member = memberService.getMemberById(id);
         return ResponseEntity.ok()
-                .body(Map.of(
-                        "msg", "성공",
-                        "result", member,
-                        "status", HttpStatus.OK
-                ));
-
+                .body(member);
     }
 }
