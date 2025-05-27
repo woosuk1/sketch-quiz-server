@@ -21,9 +21,6 @@ public class Room {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id; // 방 ID
 
-    @Column(nullable = false, unique = true)
-    private String code; // 방 코드
-
     @Column(nullable = false)
     private String title; // 방 제목
 
@@ -31,8 +28,9 @@ public class Room {
     @JoinColumn(name = "host_id", nullable = false)
     private Member hostId; // 방장 사용자 ID
 
-    @Column(nullable = false)
-    private Integer maxPlayerCnt; // 최대 플레이어 수
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "current_game_id")
+    private Game currentGame;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
