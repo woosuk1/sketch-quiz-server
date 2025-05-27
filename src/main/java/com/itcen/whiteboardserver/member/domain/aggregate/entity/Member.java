@@ -1,13 +1,19 @@
-package itcen.whiteboardserver.member.domain.aggregate.entity;
+package com.itcen.whiteboardserver.member.domain.aggregate.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import java.time.LocalDateTime;
 
 
 @Entity
+@EntityListeners(AuditingEntityListener.class)
 @Table(name = "member")
 @Getter
 @Setter
@@ -27,5 +33,13 @@ public class Member {
 
     @Column(name = "password", nullable = false)
     private String password;
+
+    @CreatedDate
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt; // 생성 시간
+
+    @LastModifiedDate
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime updatedAt; // 수정 시간
 
 }

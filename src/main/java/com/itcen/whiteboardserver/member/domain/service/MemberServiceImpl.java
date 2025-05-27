@@ -1,8 +1,8 @@
-package itcen.whiteboardserver.member.domain.service;
+package com.itcen.whiteboardserver.member.domain.service;
 
-import itcen.whiteboardserver.member.application.dto.MemberDTO;
-import itcen.whiteboardserver.member.application.service.MemberService;
-import itcen.whiteboardserver.member.domain.repository.MemberRepository;
+import com.itcen.whiteboardserver.member.application.dto.MemberDTO;
+import com.itcen.whiteboardserver.member.application.service.MemberService;
+import com.itcen.whiteboardserver.member.domain.repository.MemberRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

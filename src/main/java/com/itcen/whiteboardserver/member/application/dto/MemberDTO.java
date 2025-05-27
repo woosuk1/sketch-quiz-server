@@ -1,4 +1,4 @@
-package itcen.whiteboardserver.member.application.dto;
+package com.itcen.whiteboardserver.member.application.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;

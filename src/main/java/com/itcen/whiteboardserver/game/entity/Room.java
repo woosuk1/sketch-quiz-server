@@ -1,23 +1,45 @@
 package com.itcen.whiteboardserver.game.entity;
 
+import com.itcen.whiteboardserver.member.domain.aggregate.entity.Member;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
+@Entity
+@EntityListeners(AuditingEntityListener.class)
+@Table(name = "room")
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 public class Room {
     @Id
-    private Integer id; // 방 ID
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id; // 방 ID
+
+    @Column(nullable = false, unique = true)
     private String code; // 방 코드
+
+    @Column(nullable = false)
     private String title; // 방 제목
-    private Member ownerId; // 방장 사용자 ID
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "host_id", nullable = false)
+    private Member hostId; // 방장 사용자 ID
+
+    @Column(nullable = false)
     private Integer maxPlayerCnt; // 최대 플레이어 수
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private RoomStatus status; // WAITING, PLAYING, FINISHED
+
+    @CreatedDate
+    @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt; // 생성 시간
 
     public enum RoomStatus {

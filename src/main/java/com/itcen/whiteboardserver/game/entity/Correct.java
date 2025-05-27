@@ -12,25 +12,22 @@ import java.time.LocalDateTime;
 
 @Entity
 @EntityListeners(AuditingEntityListener.class)
-@Table(name = "turn")
+@Table(name = "correct")
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Turn {
+public class Correct {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // 턴 ID
+    private Long id; // 해당 턴에 정답 ID
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "game_id")
-    private Game game; // 소속된 게임
-
-    @Column(nullable = false)
-    private String keyword; // 그림 키워드
+    @JoinColumn(name = "turn_id")
+    private Turn turn; // 소속된 턴
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
-    private Member member; // 그림 그리는 사람
+    private Member member; // 정답자
 
     @CreatedDate
     @Column(nullable = false, updatable = false)

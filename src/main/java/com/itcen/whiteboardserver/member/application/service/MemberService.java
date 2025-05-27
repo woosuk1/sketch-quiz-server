@@ -1,6 +1,6 @@
-package itcen.whiteboardserver.member.application.service;
+package com.itcen.whiteboardserver.member.application.service;
 
-import itcen.whiteboardserver.member.application.dto.MemberDTO;
+import com.itcen.whiteboardserver.member.application.dto.MemberDTO;
 
 public interface MemberService {
     // Define the methods that will be implemented in the service class
