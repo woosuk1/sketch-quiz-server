@@ -122,7 +122,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
         // 클라이언트에서 구독할 주제 접두사
-        registry.enableSimpleBroker("/topic", "/user");
+        registry.enableSimpleBroker("/topic", "/queue", "/user");
 
         // 서버로 메시지를 보낼 때 사용할 접두사
         registry.setApplicationDestinationPrefixes("/app");
