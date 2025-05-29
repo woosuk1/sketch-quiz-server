@@ -2,7 +2,6 @@ package com.itcen.whiteboardserver.game.controller;
 
 import com.itcen.whiteboardserver.game.dto.request.RoomInfoRequest;
 import com.itcen.whiteboardserver.game.dto.request.RoomJoinRequest;
-import com.itcen.whiteboardserver.game.dto.request.RoomLeaveRequest;
 import com.itcen.whiteboardserver.game.dto.request.RoomRequest;
 import com.itcen.whiteboardserver.game.dto.response.RoomInfoResponse;
 import com.itcen.whiteboardserver.game.dto.response.RoomResponse;
@@ -46,21 +45,16 @@ public class RoomController {
     // WebSocket 엔드포인트 - 방 참여
     @MessageMapping("/room/join")
     public void joinRoom(@Valid RoomJoinRequest request, SimpMessageHeaderAccessor headerAccessor) {
-        // WebSocketConfig 에서 저장한 memberId를 세션에서 가져옴
-        // headerAccessor.getUser().getName()
-        Long memberId = (Long) headerAccessor.getSessionAttributes().get("memberId");
-
+        Long memberId = Long.valueOf(headerAccessor.getUser().getName());
         roomService.joinRoom(request, memberId);
     }
 
     // WebSocket 엔드포인트 - 방 떠나기
     @MessageMapping("/room/leave")
-    public void leaveRoom(@Valid RoomLeaveRequest request, SimpMessageHeaderAccessor headerAccessor) {
-        // WebSocketConfig 에서 저장한 memberId를 세션에서 가져옴
-        // headerAccessor.getUser().getName()
-        Long memberId = (Long) headerAccessor.getSessionAttributes().get("memberId");
+    public void leaveRoom(SimpMessageHeaderAccessor headerAccessor) {
+        Long memberId = Long.valueOf(headerAccessor.getUser().getName());
         // RoomService 호출 시 roomId와 세션에서 가져온 memberId 사용
-        roomService.leaveRoom(request, memberId);
+        roomService.leaveRoom(memberId);
     }
 
 

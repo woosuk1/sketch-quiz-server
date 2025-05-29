@@ -1,5 +1,7 @@
 # WebSocket 메시지 경로 가이드
 
+[WebSocket 테스트 HTML](src/main/resources/static/websocket-test.html)
+
 ## 목차
 
 1. WebSocket 연결 설정
@@ -29,7 +31,7 @@
 |---------|-------------------|----------------------|
 | 방 정보 조회 | `/app/room/info`  | `{ roomCode: Long }` |
 | 방 참여    | `/app/room/join`  | `{ roomCode: Long }` |
-| 방 나가기   | `/app/room/leave` | `{ roomId: Long }`   |
+| 방 나가기   | `/app/room/leave` |                      |
 
 > 참고: 모든 요청에는 JWT 토큰으로부터 추출된 사용자 ID가 자동으로 포함됩니다.
 >
