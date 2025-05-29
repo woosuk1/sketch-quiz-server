@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8"/>
+    <title>WebSocket 테스트</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <style>
+        #log { height: 300px; overflow-y: scroll; border: 1px solid #ccc; padding: 10px; }
+        .received { color: blue; }
+        .sent { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h2>WebSocket 테스트</h2>
+
+    <div>
+        <h3>연결 설정</h3>
+        <label for="serverUrl">서버 URL:</label>
+        <input type="text" id="serverUrl" value="http://localhost:8080/ws" style="width: 300px;"><br>
+
+        <label for="token">JWT 토큰:</label>
+        <input type="text" id="token" style="width: 500px;"><br>
+
+        <button id="connect">연결</button>
+        <button id="disconnect" disabled>연결 해제</button>
+    </div>
+
+    <div>
+        <h3>방 생성/참여</h3>
+        <label for="roomCode">방 코드:</label>
+        <input type="text" id="roomCode">
+        <button id="createRoom">방 생성</button>
+        <button id="joinRoom" disabled>방 참여</button>
+        <button id="leaveRoom" disabled>방 나가기</button>
+        <button id="getRoomInfo" disabled>방 정보 조회</button>
+    </div>
+
+    <div>
+        <h3>로그</h3>
+        <div id="log"></div>
+    </div>
+
+    <script>
+        let stompClient = null;
+        let roomSubscription = null;
+        let errorSubscription = null;
+
+        function addLogEntry(message, type) {
+            const logDiv = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = type;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        document.getElementById('connect').addEventListener('click', function() {
+            const serverUrl = document.getElementById('serverUrl').value;
+            const token = document.getElementById('token').value;
+
+            const socket = new SockJS(serverUrl);
+            stompClient = Stomp.over(socket);
+
+            addLogEntry('Stomp.over(socket)');
+
+            // 디버그 로그 활성화
+            stompClient.debug = function(str) {
+                addLogEntry(str, '');
+            };
+
+            const headers = {};
+            if (token) {
+                headers['Authorization'] = 'Bearer ' + token;
+            }
+
+            addLogEntry('웹소켓 연결 시도 중...', '');
+
+            stompClient.connect(headers, function(frame) {
+                addLogEntry('연결 성공: ' + frame, 'received');
+
+                // 에러 메시지 구독
+                errorSubscription = stompClient.subscribe('/user/queue/errors', function(message) {
+                    addLogEntry('에러 수신: ' + message.body, 'error');
+                });
+
+                document.getElementById('connect').disabled = true;
+                document.getElementById('disconnect').disabled = false;
+                document.getElementById('joinRoom').disabled = false;
+                document.getElementById('getRoomInfo').disabled = false;
+                document.getElementById('leaveRoom').disabled = false;
+
+            }, function(error) {
+                // 연결 실패 처리
+                addLogEntry('연결 실패: ' + error, 'error');
+                // 버튼 상태 초기화
+                document.getElementById('connect').disabled = false;
+                document.getElementById('disconnect').disabled = true;
+                document.getElementById('joinRoom').disabled = true;
+                document.getElementById('getRoomInfo').disabled = true;
+                document.getElementById('leaveRoom').disabled = true;
+
+            });
+        });
+
+        document.getElementById('disconnect').addEventListener('click', function() {
+            if (stompClient !== null) {
+                stompClient.disconnect();
+                addLogEntry('연결 해제됨', '');
+
+                document.getElementById('connect').disabled = false;
+                document.getElementById('disconnect').disabled = true;
+                document.getElementById('joinRoom').disabled = true;
+                document.getElementById('getRoomInfo').disabled = true;
+                document.getElementById('leaveRoom').disabled = true;
+            }
+        });
+
+        document.getElementById('createRoom').addEventListener('click', function() {
+            const memberId = prompt('사용자 ID를 입력하세요:', '1');
+            if (!memberId) return;
+
+            fetch('/api/room', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + document.getElementById('token').value
+                },
+                body: JSON.stringify({
+                    memberId: memberId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('roomCode').value = data.roomCode;
+                addLogEntry('방 생성됨: ' + JSON.stringify(data), 'received');
+
+                const roomCode = document.getElementById('roomCode').value;
+                if (!roomCode) {
+                    addLogEntry('방 코드를 입력하세요', 'error');
+                    return;
+                }
+
+                // 기존 방 구독 해제
+                if (roomSubscription) {
+                    roomSubscription.unsubscribe();
+                }
+
+                // 새 방 구독
+                roomSubscription = stompClient.subscribe('/topic/room/' + roomCode, function(message) {
+                    addLogEntry('방 정보 수신: ' + message.body, 'received');
+                });
+            })
+            .catch(error => {
+                addLogEntry('방 생성 실패: ' + error, 'error');
+            });
+        });
+
+        document.getElementById('joinRoom').addEventListener('click', function() {
+            if (stompClient === null) return;
+
+            const roomCode = document.getElementById('roomCode').value;
+            if (!roomCode) {
+                addLogEntry('방 코드를 입력하세요', 'error');
+                return;
+            }
+
+            // 기존 방 구독 해제
+            if (roomSubscription) {
+                roomSubscription.unsubscribe();
+            }
+
+            // 새 방 구독
+            roomSubscription = stompClient.subscribe('/topic/room/' + roomCode, function(message) {
+                addLogEntry('방 정보 수신: ' + message.body, 'received');
+            });
+
+            // 방 참여 요청
+            stompClient.send('/app/room/join', {}, JSON.stringify({
+                roomCode: parseInt(roomCode)
+            }));
+
+            addLogEntry('방 참여 요청 전송: roomCode=' + roomCode, 'sent');
+        });
+
+        document.getElementById('leaveRoom').addEventListener('click', function() {
+            if (stompClient === null) return;
+
+            const roomCode = document.getElementById('roomCode').value;
+            
+            // 방 나가기 요청 - roomId 없이 빈 객체 전송
+            stompClient.send('/app/room/leave', {}, JSON.stringify({}));
+
+            addLogEntry('방 나가기 요청 전송', 'sent');
+
+            // 방 구독 해제
+            if (roomSubscription) {
+                roomSubscription.unsubscribe();
+                roomSubscription = null;
+            }
+        });
+
+        document.getElementById('getRoomInfo').addEventListener('click', function() {
+            if (stompClient === null) return;
+
+            const roomCode = document.getElementById('roomCode').value;
+            if (!roomCode) {
+                addLogEntry('방 코드를 입력하세요', 'error');
+                return;
+            }
+
+            // 방 정보 요청
+            stompClient.send('/app/room/info', {}, JSON.stringify({
+                roomCode: parseInt(roomCode)
+            }));
+
+            addLogEntry('방 정보 요청 전송: roomCode=' + roomCode, 'sent');
+        });
+    </script>
+</body>
+</html>
