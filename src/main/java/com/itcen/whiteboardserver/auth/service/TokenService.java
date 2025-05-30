@@ -77,7 +77,7 @@ public class TokenService {
 
         // 4) 쿠키 세팅
         addCookie(response, "access_token",  access,  accessTtl,  "/");
-        addCookie(response, "refresh_token", refresh, refreshTtl, "/auth/oauth2/refresh");
+        addCookie(response, "refresh_token", refresh, refreshTtl, "/api/auth/oauth2/refresh");
     }
 
 
