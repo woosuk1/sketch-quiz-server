@@ -1,11 +1,15 @@
 package com.itcen.whiteboardserver.config;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.exceptions.JWTVerificationException;
-import com.auth0.jwt.interfaces.DecodedJWT;
-import com.auth0.jwt.interfaces.JWTVerifier;
+//import com.auth0.jwt.JWT;
+//import com.auth0.jwt.algorithms.Algorithm;
+//import com.auth0.jwt.exceptions.JWTVerificationException;
+//import com.auth0.jwt.interfaces.DecodedJWT;
+//import com.auth0.jwt.interfaces.JWTVerifier;
 import com.itcen.whiteboardserver.game.exception.AuthenticationException;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.JwtParser;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,21 +35,31 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 import org.springframework.web.socket.messaging.StompSubProtocolErrorHandler;
 import org.springframework.web.socket.server.HandshakeInterceptor;
 import org.springframework.web.socket.server.support.DefaultHandshakeHandler;
+import org.springframework.web.util.WebUtils;
 
+import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Slf4j
 @Configuration
 @EnableWebSocketMessageBroker
-@RequiredArgsConstructor
+//@RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-    @Value("${jwt.secret}")
-    private String jwtSecret;
+//    @Value("${jwt.secret}")
+//    private String jwtSecret;
+    private final SecretKey key;
+    private final JwtParser jwtParser;
+
+    public WebSocketConfig(@Value("${jwt.secret}") String secret) {
+        byte[] keyBytes = Base64.getDecoder().decode(secret);
+        this.key = Keys.hmacShaKeyFor(keyBytes);
+        this.jwtParser  = Jwts.parser()
+                .verifyWith(key)
+                .build();
+    }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
@@ -60,13 +74,17 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                             HttpServletRequest httpServletRequest = servletRequest.getServletRequest();
 
                             // HTTP 요청 헤더에서 JWT 토큰 추출
-                            String token = extractToken(httpServletRequest);
+//                            String token = extractToken(httpServletRequest);
+                            String token = WebUtils.getCookie(httpServletRequest, "access_token") != null
+                                    ? Objects.requireNonNull(WebUtils.getCookie(httpServletRequest, "access_token")).getValue()
+                                    : null;
 
                             if (token != null) {
                                 try {
                                     // JWT 토큰 검증 및 payload에서 subject(sub) 추출
-                                    DecodedJWT decodedJWT = verifyToken(token);
-                                    String subject = decodedJWT.getSubject();
+//                                    DecodedJWT decodedJWT = verifyToken(token);
+//                                    String subject = decodedJWT.getSubject();
+                                    String subject = jwtParser.parseSignedClaims(token).getPayload().getSubject();
 
                                     if (subject != null) {
                                         // 사용자 ID를 세션 속성에 저장
@@ -79,7 +97,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                                         log.info("핸드쉐이크 과정에서 WebSocket 연결 인증 성공: userId={}", subject);
                                         return true;
                                     }
-                                } catch (JWTVerificationException e) {
+//                                } catch (JWTVerificationException e) {
+                                } catch (JwtException e) {
                                     log.error("핸드쉐이크 과정에서 JWT 토큰 검증 실패", e);
                                     return false;
                                 } catch (NumberFormatException e) {
@@ -100,27 +119,27 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                         // 핸드셰이크 후 처리 (필요한 경우)
                     }
 
-                    private String extractToken(HttpServletRequest request) {
-                        // 헤더에서 Authorization 값 추출
-                        String bearerToken = request.getHeader("Authorization");
+//                    private String extractToken(HttpServletRequest request) {
+//                        // 헤더에서 Authorization 값 추출
+//                        String bearerToken = request.getHeader("Authorization");
+//
+//                        // Authorization 헤더가 없는 경우 URL 파라미터에서 토큰 추출 시도
+//                        if (bearerToken == null || !bearerToken.startsWith("Bearer ")) {
+//                            return request.getParameter("token");
+//                        }
+//
+//                        // "Bearer " 접두사 제거
+//                        return bearerToken.substring(7);
+//                    }
 
-                        // Authorization 헤더가 없는 경우 URL 파라미터에서 토큰 추출 시도
-                        if (bearerToken == null || !bearerToken.startsWith("Bearer ")) {
-                            return request.getParameter("token");
-                        }
-
-                        // "Bearer " 접두사 제거
-                        return bearerToken.substring(7);
-                    }
-
-                    private DecodedJWT verifyToken(String token) throws JWTVerificationException {
-                        // JWT 검증기 생성
-                        Algorithm algorithm = Algorithm.HMAC256(jwtSecret);
-                        JWTVerifier verifier = JWT.require(algorithm).build();
-
-                        // 토큰 검증 및 디코딩
-                        return verifier.verify(token);
-                    }
+//                    private DecodedJWT verifyToken(String token) throws JWTVerificationException {
+//                        // JWT 검증기 생성
+//                        Algorithm algorithm = Algorithm.HMAC256(jwtSecret);
+//                        JWTVerifier verifier = JWT.require(algorithm).build();
+//
+//                        // 토큰 검증 및 디코딩
+//                        return verifier.verify(token);
+//                    }
                 })
                 // WebSocket 연결을 위한 Principal(사용자 인증 정보)을 설정
                 .setHandshakeHandler(new DefaultHandshakeHandler() {
@@ -171,8 +190,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                     }
                     try {
                         // JWT 토큰 검증 및 payload에서 subject(sub) 추출
-                        DecodedJWT decodedJWT = verifyToken(token);
-                        String subject = decodedJWT.getSubject();
+//                        DecodedJWT decodedJWT = verifyToken(token);
+//                        String subject = decodedJWT.getSubject();
+                        String subject = jwtParser.parseSignedClaims(token).getPayload().getSubject();
+
                         if (subject == null) {
                             log.error("STOMP 연결 과정에서 JWT subject 없음");
                             throw new AuthenticationException("STOMP 연결 과정에서 JWT subject 없음");
@@ -182,7 +203,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                         accessor.setSessionAttributes(Collections.singletonMap("memberId", memberId));
                         accessor.setUser(() -> subject);
                         log.info("STOMP 연결 인증 성공: userId={}", subject);
-                    } catch (JWTVerificationException e) {
+//                    } catch (JWTVerificationException e) {
+                    } catch (JwtException e) {
                         log.error("STOMP 연결 과정에서 JWT 토큰 검증 실패", e);
                         throw new AuthenticationException("STOMP 연결 과정에서 JWT 토큰 검증 실패");
                     } catch (NumberFormatException e) {
@@ -193,14 +215,14 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 return message;
             }
 
-            private DecodedJWT verifyToken(String token) throws JWTVerificationException {
-                // JWT 검증기 생성
-                Algorithm algorithm = Algorithm.HMAC256(jwtSecret);
-                JWTVerifier verifier = JWT.require(algorithm).build();
-
-                // 토큰 검증 및 디코딩
-                return verifier.verify(token);
-            }
+//            private DecodedJWT verifyToken(String token) throws JWTVerificationException {
+//                // JWT 검증기 생성
+//                Algorithm algorithm = Algorithm.HMAC256(jwtSecret);
+//                JWTVerifier verifier = JWT.require(algorithm).build();
+//
+//                // 토큰 검증 및 디코딩
+//                return verifier.verify(token);
+//            }
 
         });
     }
