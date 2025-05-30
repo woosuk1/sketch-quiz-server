@@ -29,6 +29,13 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    testImplementation 'org.springframework.security:spring-security-test'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
@@ -39,8 +46,19 @@ dependencies {
     implementation 'me.paulschwarz:spring-dotenv:4.0.0'
 
     // for swagger
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0")
-    implementation("org.springdoc:springdoc-openapi-starter-common:2.3.0")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0")
+    implementation("org.springdoc:springdoc-openapi-starter-common:2.7.0")
+
+    // rate limiting을 위해 주입
+    // https://mvnrepository.com/artifact/com.bucket4j/bucket4j-core
+    implementation 'com.bucket4j:bucket4j-core:8.10.1'
+    implementation "com.bucket4j:bucket4j-redis:8.10.1"
+
+    // jjwt
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.6'       // 컴파일 시 필요
+    runtimeOnly   'io.jsonwebtoken:jjwt-impl:0.12.6'      // 서명·파싱 구현체
+    runtimeOnly   'io.jsonwebtoken:jjwt-jackson:0.12.6'   // JSON 바인딩
+
 }
 
 tasks.named('test') {

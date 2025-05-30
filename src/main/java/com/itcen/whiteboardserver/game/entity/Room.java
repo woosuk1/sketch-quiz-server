@@ -1,6 +1,6 @@
 package com.itcen.whiteboardserver.game.entity;
 
-import com.itcen.whiteboardserver.member.domain.aggregate.entity.Member;
+import com.itcen.whiteboardserver.member.entity.Member;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

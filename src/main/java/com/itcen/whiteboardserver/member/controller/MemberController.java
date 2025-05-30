@@ -1,10 +1,12 @@
-package com.itcen.whiteboardserver.member.application.controller;
+package com.itcen.whiteboardserver.member.controller;
 
+import com.itcen.whiteboardserver.security.principal.CustomPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
-import com.itcen.whiteboardserver.member.application.dto.MemberDTO;
-import com.itcen.whiteboardserver.member.application.service.MemberService;
+import com.itcen.whiteboardserver.member.dto.MemberDTO;
+import com.itcen.whiteboardserver.member.service.MemberService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,18 +23,18 @@ public class MemberController {
         this.memberService = memberService;
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("")
     @Operation(
             summary = "멤버 조회",
             description =
                     """
-                    멤버 id를 기반으로 멤버 정보를 조회해옵니다.
-                    후에는 JWT 토큰을 통해 멤버 정보를 조회할 것입니다.
+                    현재 로그인한 사용자의 정보를 가져옵니다.
                     """
     )
-    public ResponseEntity<MemberDTO> getMember(@PathVariable("id") Long id) {
-        MemberDTO member = memberService.getMemberById(id);
+    public ResponseEntity<String> getMember(@AuthenticationPrincipal CustomPrincipal principal) {
+//        MemberDTO member = memberService.getMemberById(id);
+
         return ResponseEntity.ok()
-                .body(member);
+                .body(principal.getEmail());
     }
 }
