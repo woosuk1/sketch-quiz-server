@@ -1,4 +1,4 @@
-package com.itcen.whiteboardserver.config;
+package com.itcen.whiteboardserver.config.openapi;
 
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.info.Info;
@@ -30,5 +30,14 @@ public class OpenAPIConfig {
                 .pathsToMatch("/api/member/**") // 특정 경로만 포함
                 .build();
     }
+
+    @Bean
+    public GroupedOpenApi authApi() {
+        return GroupedOpenApi.builder()
+                .group("인증 관련 API")
+                .pathsToMatch("/api/auth/**") // 특정 경로만 포함
+                .build();
+    }
+
 
 }

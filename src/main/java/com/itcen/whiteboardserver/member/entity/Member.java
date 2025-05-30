@@ -1,10 +1,9 @@
-package com.itcen.whiteboardserver.member.domain.aggregate.entity;
+package com.itcen.whiteboardserver.member.entity;
 
+import com.itcen.whiteboardserver.member.enums.AuthProvider;
+import com.itcen.whiteboardserver.member.enums.MemberRole;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -17,15 +16,16 @@ import java.time.LocalDateTime;
 @Table(name = "member")
 @Getter
 @Setter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
+@Builder
 public class Member {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Long id;
 
-    @Column(name = "name", nullable = false)
+    @Column(name = "name")
     private String name;
 
     @Column(name = "email", unique = true, nullable = false)
@@ -42,4 +42,14 @@ public class Member {
     @Column(nullable = false, updatable = false)
     private LocalDateTime updatedAt; // 수정 시간
 
+    @Column(name = "member_role", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private MemberRole memberRole;
+
+    @Column(name = "provider", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private AuthProvider provider;
+
+    @Column(name = "provider_id")
+    private String providerId;
 }
