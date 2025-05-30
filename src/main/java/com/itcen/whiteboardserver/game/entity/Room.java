@@ -21,12 +21,12 @@ public class Room {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id; // 방 ID
 
-    @Column(nullable = false)
+    @Column
     private String title; // 방 제목
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "host_id", nullable = false)
-    private Member hostId; // 방장 사용자 ID
+    private Member host; // 방장 사용자 ID
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "current_game_id")
@@ -43,5 +43,14 @@ public class Room {
     public enum RoomStatus {
         WAITING, PLAYING, FINISHED
     }
-
+    
+    // 방장 변경 메서드
+    public void updateHost(Member newHost) {
+        this.host = newHost;
+    }
+    
+    // 상태 변경 메서드
+    public void updateStatus(RoomStatus newStatus) {
+        this.status = newStatus;
+    }
 }
