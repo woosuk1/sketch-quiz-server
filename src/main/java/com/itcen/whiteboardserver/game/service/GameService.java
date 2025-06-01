@@ -2,12 +2,14 @@ package com.itcen.whiteboardserver.game.service;
 
 import com.itcen.whiteboardserver.game.constant.GameConstants;
 import com.itcen.whiteboardserver.game.dto.request.GameStartRequest;
+import com.itcen.whiteboardserver.game.dto.response.GameParticipantResponse;
 import com.itcen.whiteboardserver.game.dto.response.GameStartedResponse;
 import com.itcen.whiteboardserver.game.entity.Game;
 import com.itcen.whiteboardserver.game.entity.GameParticipation;
 import com.itcen.whiteboardserver.game.entity.Room;
 import com.itcen.whiteboardserver.game.entity.RoomParticipation;
 import com.itcen.whiteboardserver.game.exception.*;
+import com.itcen.whiteboardserver.game.mapper.GameMapper;
 import com.itcen.whiteboardserver.game.repository.GameParticipationRepository;
 import com.itcen.whiteboardserver.game.repository.GameRepository;
 import com.itcen.whiteboardserver.game.repository.RoomParticipationRepository;
@@ -20,6 +22,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -110,9 +113,22 @@ public class GameService {
             log.debug("게임 참가자 등록 완료: gameId={}, memberId={}", savedGame.getId(), member.getId());
         }
 
+        //게임 초기 정보에 추가할 참가자 정보 얻어오기
+        List<GameParticipantResponse> gameParticipantResponses = getInitialGameParticipants(participants);
+
         // 게임 시작 알림
-        GameStartedResponse response = new GameStartedResponse(savedGame.getId(), roomId);
+        GameStartedResponse response = new GameStartedResponse(savedGame.getId(), roomId, gameParticipantResponses);
         messagingTemplate.convertAndSend("/topic/room/" + roomId, response);
         log.info("게임 시작 성공: roomId={}, gameId={}, 참가자 수={}", roomId, savedGame.getId(), participantCount);
+    }
+
+    private List<GameParticipantResponse> getInitialGameParticipants(List<RoomParticipation> roomParticipants){
+        List<GameParticipantResponse> gameParticipantResponses = new ArrayList<>();
+
+        for(RoomParticipation roomParticipant:roomParticipants){
+            gameParticipantResponses.add(GameMapper.memberToGameParticipantResponse(roomParticipant.getMember()));
+        }
+
+        return gameParticipantResponses;
     }
 }

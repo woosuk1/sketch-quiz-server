@@ -5,13 +5,12 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.List;
-
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class RoomInfoResponse {
-    private List<RoomParticipantResponse> participantList;
-    private Long roomCode;
+public class RoomParticipantResponse {
+    private Long memberId;
+    private String memberName;
+    private boolean isHost;
 }
