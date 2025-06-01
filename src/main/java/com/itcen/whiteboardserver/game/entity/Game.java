@@ -1,5 +1,6 @@
 package com.itcen.whiteboardserver.game.entity;
 
+import com.itcen.whiteboardserver.turn.entitiy.Turn;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
