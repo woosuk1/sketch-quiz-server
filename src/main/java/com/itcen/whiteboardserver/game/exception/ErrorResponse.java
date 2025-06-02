@@ -1,12 +1,12 @@
 package com.itcen.whiteboardserver.game.exception;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Setter
+@NoArgsConstructor
 @AllArgsConstructor
+@ToString
 public class ErrorResponse {
     private String type;
     private String message;
