@@ -63,7 +63,6 @@ public class SecurityConfig {
                         SecurityContextHolderFilter.class)
                 // Rate limiting filter 를 먼저 chaining 하는 것은 비인증 사용자만 하면 된다
                 .addFilterAfter(redisRateLimitingFilter, RequestResponseLoggingFilter.class)
-//                .addFilterBefore(redisRateLimitingFilter, CsrfFilter.class)
                 // CSRF config: HttpOnly cookie, SameSite=Lax, header X-XSRF-TOKEN
 
 //                .csrf(csrf -> csrf
@@ -79,7 +78,6 @@ public class SecurityConfig {
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
 //                // JWT auth filter -> 인증 필터보다 먼저 토큰 추출 및 검증을 하여 SecurityContext 설정
-//                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(jwtAuthenticationFilter, SecurityContextHolderFilter.class)
 
                 // OAuth2 Login
@@ -112,12 +110,9 @@ public class SecurityConfig {
                             response.sendRedirect("/auth/login?error");
                         })
                 )
-//                .addFilterBefore(bearerTokenAuthenticationFilter, JwtAuthenticationFilter.class)
                 // Disable HTTP session
                 .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-//                .sessionManagement(session -> session
-//                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
 
                 // Authorize endpoints
                 .authorizeHttpRequests(auth -> auth
