@@ -236,6 +236,20 @@
                 // 새 방 구독
                 roomSubscription = stompClient.subscribe('/topic/room/' + roomCode, function(message) {
                     addLogEntry('방 정보 수신: ' + message.body, 'received');
+
+                    const payload = JSON.parse(message.body);
+                    console.log(payload);
+                    if(payload.type == 'GAME_STARTED') {
+                        const gameId = payload.gameId;
+
+                        stompClient.subscribe('/topic/turn/'+gameId, function(turnMessage){
+                            addLogEntry('턴 메시지: '+ turnMessage.body, 'received');
+                        })
+
+                        stompClient.subscribe('/user/topic/turn/'+gameId, function(turnMessage){
+                            addLogEntry('턴 메시지: '+ turnMessage.body, 'received');
+                        })
+                    }
                 });
             })
             .catch(error => {
@@ -260,6 +274,22 @@
         // 새 방 구독
         roomSubscription = stompClient.subscribe('/topic/room/' + roomCode, function(message) {
             addLogEntry('방 정보 수신: ' + message.body, 'received');
+
+            const payload = JSON.parse(message.body);
+            console.log(payload);
+            if(payload.type == 'GAME_STARTED') {
+                const gameId = payload.gameId;
+
+                stompClient.subscribe('/topic/turn/'+gameId, function(turnMessage){
+                    addLogEntry('턴 메시지: '+ turnMessage.body, 'received');
+                })
+
+                stompClient.subscribe('/user/topic/turn/'+gameId, function(turnMessage){
+                    addLogEntry('턴 메시지: '+ turnMessage.body, 'received');
+                })
+            }
+
+
         });
 
         // 방 참여 요청

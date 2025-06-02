@@ -4,13 +4,13 @@ import com.itcen.whiteboardserver.game.entity.Game;
 import com.itcen.whiteboardserver.member.entity.Member;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
+@Builder
 @Entity
 @Table(name = "turn")
 @Getter
@@ -38,6 +38,7 @@ public class Turn {
     @Column(nullable = false)
     private LocalDateTime endTime;
 
+    @Builder.Default
     @Column(nullable = false)
     private Boolean isTurnOver = false;
 }
