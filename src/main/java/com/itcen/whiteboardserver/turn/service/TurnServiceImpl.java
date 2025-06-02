@@ -46,7 +46,7 @@ public class TurnServiceImpl implements TurnService {
     private void broadcastTurnInfo(Long gameId, Turn turn) {
         TurnResponse<TurnData> response = TurnMapper.turnToTurnDataResponse(turn);
 
-        messagingTemplate.convertAndSend("/topic/turn/" + gameId, response);
+        messagingTemplate.convertAndSend("/topic/game/" + gameId, response);
     }
 
     private void sendDrawInfoToDrawer(Long gameId, Turn turn) {
@@ -57,7 +57,7 @@ public class TurnServiceImpl implements TurnService {
 
         messagingTemplate.convertAndSendToUser(
                 turn.getMember().getEmail(),
-                "/topic/turn/" + gameId,
+                "/topic/game/" + gameId,
                 response
         );
     }

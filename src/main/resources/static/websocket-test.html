@@ -242,11 +242,11 @@
                     if(payload.type == 'GAME_STARTED') {
                         const gameId = payload.gameId;
 
-                        stompClient.subscribe('/topic/turn/'+gameId, function(turnMessage){
+                        stompClient.subscribe('/topic/game/'+gameId, function(turnMessage){
                             addLogEntry('턴 메시지: '+ turnMessage.body, 'received');
                         })
 
-                        stompClient.subscribe('/user/topic/turn/'+gameId, function(turnMessage){
+                        stompClient.subscribe('/user/topic/game/'+gameId, function(turnMessage){
                             addLogEntry('턴 메시지: '+ turnMessage.body, 'received');
                         })
                     }
@@ -280,11 +280,11 @@
             if(payload.type == 'GAME_STARTED') {
                 const gameId = payload.gameId;
 
-                stompClient.subscribe('/topic/turn/'+gameId, function(turnMessage){
+                stompClient.subscribe('/topic/game/'+gameId, function(turnMessage){
                     addLogEntry('턴 메시지: '+ turnMessage.body, 'received');
                 })
 
-                stompClient.subscribe('/user/topic/turn/'+gameId, function(turnMessage){
+                stompClient.subscribe('/user/topic/game/'+gameId, function(turnMessage){
                     addLogEntry('턴 메시지: '+ turnMessage.body, 'received');
                 })
             }
