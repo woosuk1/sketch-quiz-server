@@ -17,7 +17,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -65,6 +64,7 @@ public class AuthController {
             );
 //        SecurityContextHolder.getContext().setAuthentication(auth);
 
+            CustomPrincipal principal = (CustomPrincipal) auth.getPrincipal();
 
             // 현재 인증된 유저의 역할 리스트 추출
             List<String> roles = auth.getAuthorities().stream()
@@ -72,7 +72,7 @@ public class AuthController {
                     .collect(Collectors.toList());
 
             // 쿠키에 access/refresh 토큰 세팅
-            tokenService.issueTokens(auth.getName(), roles, response);
+            tokenService.issueTokens(auth.getName(), principal.getNickname(), String.valueOf(principal.getId()), roles, response);
 
             // Body 없이 200 OK 리턴
             return ResponseEntity.ok().build();
@@ -109,7 +109,9 @@ public class AuthController {
     public Map<String,Object> me(@AuthenticationPrincipal CustomPrincipal principal) {
 
         return Map.of(
-                "email", principal.getEmail()
+                "email", principal.getEmail(),
+                "nickname", principal.getNickname(),
+                "id", principal.getId()
         );
     }
     @GetMapping("/protected")

@@ -1,6 +1,9 @@
 package com.itcen.whiteboardserver.security.oauth;
 
 import com.itcen.whiteboardserver.auth.service.TokenService;
+import com.itcen.whiteboardserver.member.dto.MemberDTO;
+import com.itcen.whiteboardserver.member.enums.MemberRole;
+import com.itcen.whiteboardserver.member.service.MemberService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -12,12 +15,15 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
 public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
     private final TokenService tokenService;
+    private final MemberService memberService;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
@@ -27,11 +33,19 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         OAuth2AuthenticationToken oauthToken =
                 (OAuth2AuthenticationToken) authentication;
         String email = oauthToken.getPrincipal().getAttribute("email");
-        List<String> roles = oauthToken.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority).toList();
+//        List<String> roles = oauthToken.getAuthorities().stream()
+//                .map(GrantedAuthority::getAuthority).toList();
+
+        MemberDTO member = memberService.getMemberByEmail(email);
+
+        Set<MemberRole> rolesSet = member.getMemberRole();
+
+        List<String> roles = rolesSet.stream()
+                .map(MemberRole::name)
+                .collect(Collectors.toList());
 
         // 토큰 발급
-        tokenService.issueTokens(email, roles, response);
+        tokenService.issueTokens(email, member.getNickname(), String.valueOf(member.getId()), roles, response);
 
         // 프론트엔드에 리디렉트
         response.sendRedirect("/");

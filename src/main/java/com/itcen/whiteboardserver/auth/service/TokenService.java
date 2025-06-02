@@ -1,5 +1,6 @@
 package com.itcen.whiteboardserver.auth.service;
 
+import com.itcen.whiteboardserver.member.enums.MemberRole;
 import com.itcen.whiteboardserver.security.principal.CustomPrincipal;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
@@ -14,17 +15,13 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.WebUtils;
 
 import javax.crypto.SecretKey;
 import java.time.Duration;
-import java.util.Base64;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -61,14 +58,14 @@ public class TokenService {
     /**
      * Issue new access + refresh tokens and set as HttpOnly cookies
      */
-    public void issueTokens(String username, List<String> roles,
+    public void issueTokens(String username, String nickname, String id, List<String> roles,
                             HttpServletResponse response) {
         // 1) 기존 키 하나만 삭제할 필요 없이, 덮어쓰기
         String setKey = "refresh:" + username;
 
         // 2) 새 토큰 생성
-        String access  = createToken(username, roles, accessTtl);
-        String refresh = createToken(username, roles, refreshTtl);
+        String access  = createToken(username, nickname, id, roles, accessTtl);
+        String refresh = createToken(username, nickname, id, roles, refreshTtl);
 
         // 3) 새 JTI만 저장 (overwrite)
         String jti = jwtParser.parseSignedClaims(refresh).getPayload().getId();
@@ -89,30 +86,39 @@ public class TokenService {
         try {
             Claims claims = jwtParser.parseSignedClaims(token)
                     .getPayload();
-            String user = claims.getSubject();
-
-            // 필요한 클레임 추출
-//            String id         = (String) claims.get("userId");
-//            String email    = claims.getSubject();
-//            String nickname = (String) claims.get("name");
+            String username = claims.getSubject();
 
             @SuppressWarnings("unchecked")
 //            List<String> roles = (List<String>) claims.get("roles");
-            String rolesString = (String) claims.get("roles");
-            List<String> roles = rolesString != null
-                    ? List.of(rolesString.split(","))
-                    : List.of();
-            List<GrantedAuthority> auths = roles.stream()
-                    .map(AuthorityUtils::commaSeparatedStringToAuthorityList)
-                    .flatMap(List::stream)
-                    .collect(Collectors.toList());
+
+//            String rolesString = (String) claims.get("roles");
+            String id = (String) claims.get("id");
+            String nickname = (String) claims.get("nickname");
+
+//            List<GrantedAuthority> auths = rolesString != null
+//                    ? Arrays.stream(rolesString.split(","))
+//                    .map(AuthorityUtils::commaSeparatedStringToAuthorityList)
+//                    .flatMap(List::stream)
+//                    .collect(Collectors.toList())
+//                    : List.of();
+
+            @SuppressWarnings("unchecked")
+            List<String> rolesAsString = claims.get("roles", List.class);
+            Set<MemberRole> rolesEnum = rolesAsString.stream()
+                    .map(MemberRole::valueOf)     // ex: "ROLE_ADMIN" → MemberRole.ADMIN
+                    .collect(Collectors.toSet());
 
             /* 설명. customPrincipal 생성 */
-//            CustomPrincipal principal = new CustomPrincipal(id, email, nickname, auths);
-//            CustomPrincipal principal = new CustomPrincipal(id, user);
-            CustomPrincipal principal = new CustomPrincipal(user);
+//            CustomPrincipal principal = new CustomPrincipal(user);
+            CustomPrincipal principal = new CustomPrincipal(
+                    Long.valueOf(id),
+                    username,
+                    nickname,
+                    /* 빈 문자열이어도 무방(패스워드는 이미 검증된 상태) */ "",
+                    rolesEnum
+            );
 
-            return new UsernamePasswordAuthenticationToken(principal, token, auths);
+            return new UsernamePasswordAuthenticationToken(principal, token, principal.getAuthorities());
         } catch (JwtException ex) {
             return null;
         }
@@ -126,11 +132,13 @@ public class TokenService {
         if (old == null) throw new JwtException("Missing refresh token");
 
         Jws<Claims> claims = jwtParser.parseSignedClaims(old);
-        String user = claims.getPayload().getSubject();
+        String username = claims.getPayload().getSubject();
+        String id = claims.getPayload().get("id", String.class);
+        String nickname = claims.getPayload().get("nickname", String.class);
         String oldJti = claims.getPayload().getId();
 
         // 1) Redis에 저장된 값과 비교
-        String key      = "refresh:" + user;
+        String key      = "refresh:" + username;
         String storedJti = redis.opsForValue().get(key);
         if (!oldJti.equals(storedJti)) {
             throw new JwtException("Invalid refresh token");
@@ -142,7 +150,7 @@ public class TokenService {
                 .collect(Collectors.toList());
 
         // 재사용 issueTokens
-        issueTokens(user, roles, response);
+        issueTokens(username, nickname, id, roles, response);
     }
 
     /**
@@ -167,12 +175,14 @@ public class TokenService {
     // --- internal helpers ---
 
 
-    private String createToken(String subject, List<String> roles, Duration ttl) {
+    private String createToken(String subject, String nickname, String id, List<String> roles, Duration ttl) {
         return Jwts.builder()
                 .subject(subject)
                 .id(UUID.randomUUID().toString())
-                .claim("roles", String.join(",", roles))
-//                .claim("name", )
+//                .claim("roles", String.join(",", roles))
+                .claim("roles", roles)
+                .claim("nickname", nickname)
+                .claim("id", id)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + ttl.toMillis()))
                 .signWith(key)

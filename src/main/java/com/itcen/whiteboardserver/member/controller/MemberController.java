@@ -7,10 +7,7 @@ import com.itcen.whiteboardserver.member.service.MemberService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/member")
@@ -36,5 +33,20 @@ public class MemberController {
 
         return ResponseEntity.ok()
                 .body(principal.getEmail());
+    }
+
+    @GetMapping("/nickname")
+    @Operation(
+            summary = "닉네임 재설정",
+            description =
+                    """
+                    현재 로그인한 사용자의 닉네임을 랜덤으로 재설정합니다.
+                    """
+    )
+    public ResponseEntity<MemberDTO> postChangeNickname(@AuthenticationPrincipal CustomPrincipal principal) {
+        MemberDTO member = memberService.postChangeNickname(principal);
+
+        return ResponseEntity.ok()
+                .body(member);
     }
 }

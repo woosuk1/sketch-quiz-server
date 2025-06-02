@@ -88,7 +88,7 @@ public class RoomService {
                 .map(roomParticipation -> {
                     Member member = roomParticipation.getMember();
                     boolean isHost = Objects.equals(member.getId(), room.getHost().getId());
-                    return new ParticipantResponse(member.getId(), member.getName(), isHost);
+                    return new ParticipantResponse(member.getId(), member.getNickname(), isHost);
                 })
                 .toList();
 
