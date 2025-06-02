@@ -8,9 +8,12 @@ import com.itcen.whiteboardserver.member.repository.MemberRepository;
 import com.itcen.whiteboardserver.turn.dto.response.TurnResponse;
 import com.itcen.whiteboardserver.turn.dto.response.TurnResponseType;
 import com.itcen.whiteboardserver.turn.dto.response.data.TurnData;
+import com.itcen.whiteboardserver.turn.entitiy.Correct;
 import com.itcen.whiteboardserver.turn.entitiy.Turn;
 import com.itcen.whiteboardserver.turn.mapper.TurnMapper;
+import com.itcen.whiteboardserver.turn.repository.CorrectRepository;
 import com.itcen.whiteboardserver.turn.repository.TurnRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -26,6 +29,7 @@ public class TurnServiceImpl implements TurnService {
     final MemberRepository memberRepository;
     final GameRepository gameRepository;
     final TurnRepository turnRepository;
+    final CorrectRepository correctRepository;
 
 
     @Override
@@ -36,11 +40,42 @@ public class TurnServiceImpl implements TurnService {
 
         Turn turn = createTurn(gameId);
         turnRepository.save(turn);
+        Game game = getGameByGameId(gameId);
+        game.changeTurn(turn);
+        gameRepository.save(game);
 
         broadcastTurnInfo(gameId, turn);
         sendDrawInfoToDrawer(gameId, turn);
 
         //TODO: 2분 30초 후 스케줄링
+    }
+
+    @Transactional
+    @Override
+    public void correct(Long gameId, Long memberId) {
+        Game game = getGameByGameId(gameId);
+        Turn turn = game.getCurrentTurn();
+
+        Member member = memberRepository.findById(memberId).orElseThrow(
+                () -> new RuntimeException("해당하는 member가 존재하지 않습니다.")
+        );
+
+        Correct correct = Correct.builder()
+                .turn(turn)
+                .member(member)
+                .build();
+
+        correctRepository.save(correct);
+    }
+
+    @Transactional
+    @Override
+    public boolean isAlreadyCorrect(Long gameId, Long memberId) {
+        Game game = getGameByGameId(gameId);
+        Turn turn = game.getCurrentTurn();
+        Member member = getMemberByMemberId(memberId);
+
+        return correctRepository.existsByTurnAndMember(turn, member);
     }
 
     private void broadcastTurnInfo(Long gameId, Turn turn) {

@@ -1,6 +1,7 @@
 package com.itcen.whiteboardserver.game.session;
 
 import com.itcen.whiteboardserver.game.session.state.GameState;
+import com.itcen.whiteboardserver.game.session.state.GameStatus;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -25,6 +26,12 @@ public class GameSession {
         gameSession.remove(gameId);
     }
 
+    public String thisTurnQuizWord(Long gameId) {
+        GameState gameState = getGameState(gameId);
+
+        return gameState.getQuizWords().get(gameState.getNowTurn());
+    }
+
     public boolean canGoNextTurn(Long gameId) {
         GameState gameState = getGameState(gameId);
         return !(gameState.getNowTurn() + 1 >= gameState.getTotalTurnCnt());
@@ -32,7 +39,7 @@ public class GameSession {
 
     public Long goNextTurnAndGetDrawer(Long gameId) {
         GameState gameState = getGameState(gameId);
-        gameState.increaseNowTurn();
+        gameState.goNextTurn();
 
         int drawerId = gameState.getNowTurn() % gameState.getDrawerSequence().size();
         return gameState.getDrawerSequence().get(drawerId);
@@ -42,6 +49,28 @@ public class GameSession {
         GameState gameState = getGameState(gameId);
 
         return gameState.getThisTurnWord();
+    }
+
+    public boolean isGamePlaying(Long gameId) {
+        GameState gameState = getGameState(gameId);
+        GameStatus status = gameState.getStatus();
+
+        return status == GameStatus.IN_TURN;
+    }
+
+    public boolean isThisMemberParticipant(Long gameId, Long memberId) {
+        GameState gameState = getGameState(gameId);
+
+        return gameState.getDrawerSequence().contains(memberId);
+    }
+
+    public boolean isThisDrawer(Long gameId, Long memberId) {
+        GameState gameState = getGameState(gameId);
+
+        int drawerIdx = gameState.getNowTurn() % gameState.getDrawerSequence().size();
+        Long drawerId = gameState.getDrawerSequence().get(drawerIdx);
+
+        return memberId == drawerId;
     }
 
     private GameState getGameState(Long gameId) {

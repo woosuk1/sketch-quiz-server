@@ -17,6 +17,8 @@ public class GameState {
     private List<String> quizWords;
     private int totalTurnCnt;
     private int nowTurn;
+    private GameStatus status;
+
 
     //TODO: Exception 반환형 추후 고려
     public static GameState createGameState(List<Long> drawerSequence, List<String> quizWords) {
@@ -34,7 +36,8 @@ public class GameState {
                 List.copyOf(drawerSequence),
                 List.copyOf(quizWords),
                 3 * drawerCnt,
-                -1
+                -1,
+                GameStatus.NOT_STARTED
         );
     }
 
@@ -42,19 +45,20 @@ public class GameState {
         return List.copyOf(drawerSequence);
     }
 
-    public List<String> getQuizWords() {
-        return List.copyOf(quizWords);
-    }
-
     public String getThisTurnWord() {
         return quizWords.get(nowTurn);
     }
 
-    public void increaseNowTurn() {
+    public void goNextTurn() {
         if (nowTurn >= totalTurnCnt) {
             throw new RuntimeException("턴 증가가 전체 턴을 넘었습니다.");
         }
 
         nowTurn++;
+        status = GameStatus.IN_TURN;
+    }
+
+    public void endTurn() {
+        status = GameStatus.BETWEEN_TURNS;
     }
 }
