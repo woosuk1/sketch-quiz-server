@@ -4,18 +4,18 @@ pipeline {
     }
 
     environment {
-        SERVER_IP = "${env.SERVER_IP}"
-        IMAGE_NAME = 'back-ecr'
-        IMAGE_TAG = "${env.BUILD_NUMBER}"
+        SERVER_IP = "${SERVER_IP}"  // 서버 IP 환경변수로 설정
+        IMAGE_NAME = 'visionn7111/server-app'  // 서버용 이미지명
+        IMAGE_TAG = "${BUILD_NUMBER}"
         ECR_REGISTRY = '010686621060.dkr.ecr.ap-northeast-2.amazonaws.com'
-        ECR_REPOSITORY = '2team/back-ecr'
+        ECR_REPOSITORY = '2team/server-app'
         AWS_REGION = 'ap-northeast-2'
     }
 
     stages {
         stage('Clone Source') {
             steps {
-                git url: 'https://github.com/itcen-project-2team/sketch-quiz-server', branch: 'main'
+                git url: 'https://github.com/itcen-project-2team/server-app', branch: 'infra/cicd'
             }
         }
 
@@ -31,10 +31,10 @@ pipeline {
 
         stage('Build & Push Docker Image') {
             steps {
-                script {
-                    sh "docker build -t $ECR_REPOSITORY:$IMAGE_TAG ."
-                    sh "docker push $ECR_REPOSITORY:$IMAGE_TAG"
-                }
+                sh """
+                    docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
+                    docker push $ECR_REPOSITORY:$IMAGE_TAG
+                """
             }
         }
 
@@ -42,11 +42,11 @@ pipeline {
             steps {
                 sshagent(credentials: ['webserver-ssh-key']) {
                     sh """
-                    scp -o StrictHostKeyChecking=no docker-compose.yml ubuntu@${SERVER_IP}:~/whiteboard-server/
+                    scp -o StrictHostKeyChecking=no docker-compose.yml ubuntu@${SERVER_IP}:~/server-app/
                     ssh -o StrictHostKeyChecking=no ubuntu@${SERVER_IP} '
-                      cd ~/whiteboard-server
-                      docker-compose down || true
-                      IMAGE_TAG=$IMAGE_TAG docker-compose up -d --build
+                        cd ~/server-app
+                        docker-compose down || true
+                        IMAGE_TAG=$IMAGE_TAG docker-compose up -d --build
                     '
                     """
                 }
