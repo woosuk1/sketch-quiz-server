@@ -1,55 +1,56 @@
 pipeline {
-  agent any
-
-  environment {
-    SERVER_IP = "${env.SERVER_IP}"  // Jenkins 환경 설정에서 가져옴
-  }
-
-  stages {
-    stage('Clone Source') {
-      steps {
-        git url: 'https://github.com/itcen-project-2team/sketch-quiz-server', branch: 'main'
-      }
+    agent {
+        docker { image 'docker:24-dind' }
     }
 
-    stage('Build JAR') {
-      steps {
-        sh './gradlew clean build'
-      }
+    environment {
+        SERVER_IP = "${env.SERVER_IP}"
+        IMAGE_NAME = 'back-ecr'
+        IMAGE_TAG = "${env.BUILD_NUMBER}"
+        ECR_REGISTRY = '010686621060.dkr.ecr.ap-northeast-2.amazonaws.com'
+        ECR_REPOSITORY = '2team/back-ecr'
+        AWS_REGION = 'ap-northeast-2'
     }
 
-    stage('Copy Entire Project to WAS') {
-      steps {
-        sshagent(credentials: ['webserver-ssh-key']) {
-          sh """
-            ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP '
-              rm -rf ~/whiteboard-server
-              mkdir -p ~/whiteboard-server
-            '
-
-            scp -o StrictHostKeyChecking=no -r * .[^.]* ubuntu@$SERVER_IP:~/whiteboard-server
-          """
+    stages {
+        stage('Clone Source') {
+            steps {
+                git url: 'https://github.com/itcen-project-2team/sketch-quiz-server', branch: 'main'
+            }
         }
-      }
-    }
 
-    stage('Deploy to WAS') {
-      steps {
-        sshagent(credentials: ['webserver-ssh-key']) {
-          sh """
-            ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP '
-              cd ~/whiteboard-server
-
-              if [ ! -f docker-compose.yml ]; then
-                echo "docker-compose.yml 파일이 없습니다. 배포 중단." && exit 1
-              fi
-
-              docker-compose down || true
-              docker-compose up -d --build
-            '
-          """
+        stage('Login to ECR') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'AWS_ECR_CREDENTIAL', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                    sh '''
+                        aws --region $AWS_REGION ecr get-login-password | docker login --username AWS --password-stdin $ECR_REGISTRY
+                    '''
+                }
+            }
         }
-      }
+
+        stage('Build & Push Docker Image') {
+            steps {
+                script {
+                    sh "docker build -t $ECR_REPOSITORY:$IMAGE_TAG ."
+                    sh "docker push $ECR_REPOSITORY:$IMAGE_TAG"
+                }
+            }
+        }
+
+        stage('Deploy with docker-compose') {
+            steps {
+                sshagent(credentials: ['webserver-ssh-key']) {
+                    sh """
+                    scp -o StrictHostKeyChecking=no docker-compose.yml ubuntu@${SERVER_IP}:~/whiteboard-server/
+                    ssh -o StrictHostKeyChecking=no ubuntu@${SERVER_IP} '
+                      cd ~/whiteboard-server
+                      docker-compose down || true
+                      IMAGE_TAG=$IMAGE_TAG docker-compose up -d --build
+                    '
+                    """
+                }
+            }
+        }
     }
-  }
 }
