@@ -28,11 +28,18 @@ public class MemberController {
                     현재 로그인한 사용자의 정보를 가져옵니다.
                     """
     )
-    public ResponseEntity<String> getMember(@AuthenticationPrincipal CustomPrincipal principal) {
+//    public ResponseEntity<String> getMember(@AuthenticationPrincipal CustomPrincipal principal) {
+    public ResponseEntity<MemberDTO> getMember(@AuthenticationPrincipal CustomPrincipal principal) {
 //        MemberDTO member = memberService.getMemberById(id);
 
+        MemberDTO member = MemberDTO.builder()
+                .id(principal.getId())
+                .nickname(principal.getNickname())
+                .email(principal.getEmail())
+                .build();
+
         return ResponseEntity.ok()
-                .body(principal.getEmail());
+                .body(member);
     }
 
     @GetMapping("/nickname")

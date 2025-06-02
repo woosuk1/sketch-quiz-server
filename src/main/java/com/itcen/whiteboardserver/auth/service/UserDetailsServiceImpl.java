@@ -54,7 +54,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         Member user = Member.builder()
                 .email(email)
                 .password(passwordEncoder.encode(rawPassword))
-                .nickname(memberService.getRandomNickname()) // nicknames 테이블에서 랜덤으로 닉네임 가져오기
+                .nickname(memberService.getRandomNickname().getNickname()) // nicknames 테이블에서 랜덤으로 닉네임 가져오기
                 .memberRole(Collections.singleton(MemberRole.MEMBER)) // 기본 역할 설정
                 .provider(AuthProvider.LOCAL) // enum 필드: LOCAL, GOOGLE, KAKAO
                 .build();
@@ -72,7 +72,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         Member newUser = Member.builder()
                 .email(email)
                 .password(passwordEncoder.encode("defaultPassword")) // OAuth2 사용자에게는 기본 비밀번호 설정
-                .nickname(memberService.getRandomNickname()) // nicknames 테이블에서 랜덤으로 들고오기
+                .nickname(memberService.getRandomNickname().getNickname()) // nicknames 테이블에서 랜덤으로 들고오기
                 .memberRole(Collections.singleton(MemberRole.MEMBER)) // 기본 역할 설정
                 .provider(AuthProvider.GOOGLE) // enum 필드: LOCAL, GOOGLE, KAKAO
                 .providerId((String) attributes.get("sub")) // google 고유 id

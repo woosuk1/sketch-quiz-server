@@ -40,7 +40,7 @@ public class Member {
     private LocalDateTime createdAt; // 생성 시간
 
     @LastModifiedDate
-    @Column(nullable = false, updatable = false)
+    @Column(nullable = false)
     private LocalDateTime updatedAt; // 수정 시간
 
     @Column(name = "member_role", nullable = false)
