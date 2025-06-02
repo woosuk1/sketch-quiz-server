@@ -88,19 +88,8 @@ public class TokenService {
                     .getPayload();
             String username = claims.getSubject();
 
-            @SuppressWarnings("unchecked")
-//            List<String> roles = (List<String>) claims.get("roles");
-
-//            String rolesString = (String) claims.get("roles");
             String id = (String) claims.get("id");
             String nickname = (String) claims.get("nickname");
-
-//            List<GrantedAuthority> auths = rolesString != null
-//                    ? Arrays.stream(rolesString.split(","))
-//                    .map(AuthorityUtils::commaSeparatedStringToAuthorityList)
-//                    .flatMap(List::stream)
-//                    .collect(Collectors.toList())
-//                    : List.of();
 
             @SuppressWarnings("unchecked")
             List<String> rolesAsString = claims.get("roles", List.class);
@@ -109,7 +98,6 @@ public class TokenService {
                     .collect(Collectors.toSet());
 
             /* 설명. customPrincipal 생성 */
-//            CustomPrincipal principal = new CustomPrincipal(user);
             CustomPrincipal principal = new CustomPrincipal(
                     Long.valueOf(id),
                     username,
@@ -156,13 +144,11 @@ public class TokenService {
     /**
      * Logout: revoke all refresh tokens for current user
      */
-    public void logout(HttpServletRequest request, HttpServletResponse response) {
-//        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        CustomPrincipal principal = (CustomPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-//        CustomPrincipal principal = (CustomPrincipal) auth.getPrincipal();
+    public void logout(HttpServletRequest request, HttpServletResponse response, CustomPrincipal principal) {
+//        CustomPrincipal principal = (CustomPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if (principal != null) {
             String user = principal.getEmail();
-            log.info("Logging out user: {}", principal.getEmail());
+            log.debug("Logging out user: {}", principal.getEmail());
 
             redis.delete("refresh:" + user);
         }

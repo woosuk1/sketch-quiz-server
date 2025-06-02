@@ -33,14 +33,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다: " + email));
 
-        // Member 엔티티에 Set<MemberRole> memberRoles 필드가 있다고 가정
-//        Set<MemberRole> rolesFromDb = member.getMemberRole();
-
-//        return org.springframework.security.core.userdetails.User.builder()
-//                .username(member.getEmail())
-//                .password(member.getPassword())
-//                .roles(member.getMemberRole().name()) // 또는 .authorities(...) 도 가능
-//                .build();
         // CustomPrincipal을 사용하여 UserDetails를 반환
         return new CustomPrincipal(member.getId(), member.getEmail(), member.getPassword(),
                 member.getNickname(), member.getMemberRole());

@@ -7,6 +7,7 @@ import com.itcen.whiteboardserver.security.principal.CustomPrincipal;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -100,8 +101,9 @@ public class AuthController {
      */
     @GetMapping("/logout")
     public ResponseEntity<Void> logout(HttpServletRequest request,
-                                       HttpServletResponse response) {
-        tokenService.logout(request, response);
+                                       HttpServletResponse response,
+                                       @AuthenticationPrincipal CustomPrincipal principal) {
+        tokenService.logout(request, response, principal);
         return ResponseEntity.noContent().build();
     }
 
