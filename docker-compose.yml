@@ -18,21 +18,29 @@ services:
     volumes:
       - redis-data:/data
 
+  postgresql:
+    image: postgres:15
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: drawcen
+      POSTGRES_USER: yagumyagum
+      POSTGRES_PASSWORD: yagumyagum
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+
   spring:
     build:
       context: .
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
-    environment:
-      MONGODB_URI: mongodb://root:root@mongodb:27017/whiteboard?authSource=admin
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      # PostgreSQL은 RDS 사용 예정이므로 환경변수 제외
     depends_on:
       - mongodb
       - redis
+      - postgresql
 
 volumes:
   mongo-data:
   redis-data:
+  pg-data:
