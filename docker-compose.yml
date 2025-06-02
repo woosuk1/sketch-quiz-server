@@ -11,6 +11,13 @@ services:
     volumes:
       - mongo-data:/data/db
 
+  redis:
+    image: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
   spring:
     build:
       context: .
@@ -19,8 +26,13 @@ services:
       - "8080:8080"
     environment:
       MONGODB_URI: mongodb://root:root@mongodb:27017/whiteboard?authSource=admin
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      # PostgreSQL은 RDS 사용 예정이므로 환경변수 제외
     depends_on:
       - mongodb
+      - redis
 
 volumes:
   mongo-data:
+  redis-data:
