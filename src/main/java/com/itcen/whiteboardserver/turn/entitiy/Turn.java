@@ -41,4 +41,8 @@ public class Turn {
     @Builder.Default
     @Column(nullable = false)
     private Boolean isTurnOver = false;
+
+    public void doTurnOver() {
+        isTurnOver = true;
+    }
 }

@@ -31,4 +31,8 @@ public class Game {
     public void changeTurn(Turn turn) {
         currentTurn = turn;
     }
+
+    public void thisTurnDown() {
+        currentTurn = null;
+    }
 }

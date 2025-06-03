@@ -12,7 +12,7 @@ public class GameSession {
     private final Map<Long, GameState> gameSession = new ConcurrentHashMap<>();
 
     //TODO: Exception 반환형 추후 고려
-    public void createSession(Long gameId, GameState gameState) {
+    public synchronized void createSession(Long gameId, GameState gameState) {
         if (gameSession.containsKey(gameId)) {
             throw new RuntimeException("Already this game session created");
         }
@@ -20,24 +20,24 @@ public class GameSession {
         gameSession.put(gameId, gameState);
     }
 
-    public void removeSession(Long gameId) {
+    public synchronized void removeSession(Long gameId) {
         validateGameExist(gameId);
 
         gameSession.remove(gameId);
     }
 
-    public String thisTurnQuizWord(Long gameId) {
+    public synchronized String thisTurnQuizWord(Long gameId) {
         GameState gameState = getGameState(gameId);
 
         return gameState.getQuizWords().get(gameState.getNowTurn());
     }
 
-    public boolean canGoNextTurn(Long gameId) {
+    public synchronized boolean canGoNextTurn(Long gameId) {
         GameState gameState = getGameState(gameId);
         return !(gameState.getNowTurn() + 1 >= gameState.getTotalTurnCnt());
     }
 
-    public Long goNextTurnAndGetDrawer(Long gameId) {
+    public synchronized Long goNextTurnAndGetDrawer(Long gameId) {
         GameState gameState = getGameState(gameId);
         gameState.goNextTurn();
 
@@ -45,26 +45,26 @@ public class GameSession {
         return gameState.getDrawerSequence().get(drawerId);
     }
 
-    public String getNowTurnQuizWord(Long gameId) {
+    public synchronized String getNowTurnQuizWord(Long gameId) {
         GameState gameState = getGameState(gameId);
 
         return gameState.getThisTurnWord();
     }
 
-    public boolean isGamePlaying(Long gameId) {
+    public synchronized boolean isGamePlaying(Long gameId) {
         GameState gameState = getGameState(gameId);
         GameStatus status = gameState.getStatus();
 
         return status == GameStatus.IN_TURN;
     }
 
-    public boolean isThisMemberParticipant(Long gameId, Long memberId) {
+    public synchronized boolean isThisMemberParticipant(Long gameId, Long memberId) {
         GameState gameState = getGameState(gameId);
 
         return gameState.getDrawerSequence().contains(memberId);
     }
 
-    public boolean isThisDrawer(Long gameId, Long memberId) {
+    public synchronized boolean isThisDrawer(Long gameId, Long memberId) {
         GameState gameState = getGameState(gameId);
 
         int drawerIdx = gameState.getNowTurn() % gameState.getDrawerSequence().size();
