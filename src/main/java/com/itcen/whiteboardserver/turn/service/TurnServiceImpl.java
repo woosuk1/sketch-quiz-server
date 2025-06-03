@@ -42,7 +42,7 @@ public class TurnServiceImpl implements TurnService {
     final TurnRepository turnRepository;
     final CorrectRepository correctRepository;
     final GameParticipationRepository gameParticipationRepository;
-    final int TURN_SECONDS = 10;
+    final int TURN_SECONDS = 150;
     final PlatformTransactionManager transactionManager;
     final ApplicationContext applicationContext;
 
