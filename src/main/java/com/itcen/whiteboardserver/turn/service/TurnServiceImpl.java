@@ -1,6 +1,8 @@
 package com.itcen.whiteboardserver.turn.service;
 
 import com.itcen.whiteboardserver.game.entity.Game;
+import com.itcen.whiteboardserver.game.entity.GameParticipation;
+import com.itcen.whiteboardserver.game.repository.GameParticipationRepository;
 import com.itcen.whiteboardserver.game.repository.GameRepository;
 import com.itcen.whiteboardserver.game.session.GameSession;
 import com.itcen.whiteboardserver.member.entity.Member;
@@ -19,7 +21,9 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
+@Transactional
 @RequiredArgsConstructor
 @Service
 public class TurnServiceImpl implements TurnService {
@@ -30,12 +34,14 @@ public class TurnServiceImpl implements TurnService {
     final GameRepository gameRepository;
     final TurnRepository turnRepository;
     final CorrectRepository correctRepository;
+    final GameParticipationRepository gameParticipationRepository;
 
 
     @Override
     public void startTurn(Long gameId) {
         if (!gameSession.canGoNextTurn(gameId)) {
-            //TODO: 게임 종료
+            //TODO: 게임 종료 + 상세 처리 필요
+            throw new RuntimeException("게임이 종료됩니다.");
         }
 
         Turn turn = createTurn(gameId);
@@ -50,7 +56,6 @@ public class TurnServiceImpl implements TurnService {
         //TODO: 2분 30초 후 스케줄링
     }
 
-    @Transactional
     @Override
     public void correct(Long gameId, Long memberId) {
         Game game = getGameByGameId(gameId);
@@ -68,7 +73,6 @@ public class TurnServiceImpl implements TurnService {
         correctRepository.save(correct);
     }
 
-    @Transactional
     @Override
     public boolean isAlreadyCorrect(Long gameId, Long memberId) {
         Game game = getGameByGameId(gameId);
@@ -76,6 +80,38 @@ public class TurnServiceImpl implements TurnService {
         Member member = getMemberByMemberId(memberId);
 
         return correctRepository.existsByTurnAndMember(turn, member);
+    }
+
+    @Override
+    public boolean turnOverIfPossible(Long gameId) {
+        Game game = getGameByGameId(gameId);
+        Turn turn = game.getCurrentTurn();
+
+        if (turn.getIsTurnOver()) {
+            throw new RuntimeException("이미 끝난 턴입니다.");
+        }
+
+        List<Correct> corrects = correctRepository.findAllByTurn(turn);
+        List<GameParticipation> participations = gameParticipationRepository.findAllByGame(game);
+
+        if (participations.size() - 1 != corrects.size()) {
+            return false;
+        }
+
+        doTurnOver(gameId);
+
+        return true;
+    }
+
+    private void doTurnOver(Long gameId) {
+        Game game = getGameByGameId(gameId);
+        Turn turn = game.getCurrentTurn();
+
+        if (turn.getIsTurnOver()) {
+            throw new RuntimeException("이미 끝난 턴입니다.");
+        }
+
+        startTurn(gameId);
     }
 
     private void broadcastTurnInfo(Long gameId, Turn turn) {

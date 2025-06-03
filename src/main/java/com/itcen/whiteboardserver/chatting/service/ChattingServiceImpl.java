@@ -46,8 +46,7 @@ public class ChattingServiceImpl implements ChattingService {
             message = chattingRequest.email() + "님이 정답을 맞추셨습니다.";
 
             turnService.correct(chattingRequest.gameId(), memberId);
-
-            //TODO: 모든 사람이 다 정답 맞췄는지 확인 -> 종료
+            turnService.turnOverIfPossible(chattingRequest.gameId());
         }
 
         broadcastChat(chattingRequest.gameId(), message);

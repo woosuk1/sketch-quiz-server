@@ -6,4 +6,6 @@ public interface TurnService {
     void correct(Long gameId, Long memberId);
 
     boolean isAlreadyCorrect(Long gameId, Long memberId);
+
+    boolean turnOverIfPossible(Long gameId);
 }
