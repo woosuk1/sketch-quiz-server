@@ -11,4 +11,5 @@ public interface CorrectRepository extends JpaRepository<Correct, Long> {
     boolean existsByTurnAndMember(Turn turn, Member member);
 
     List<Correct> findAllByTurn(Turn turn);
+    List<Correct> findAllByTurnOrderByCreatedAtDesc(Turn turn);
 }

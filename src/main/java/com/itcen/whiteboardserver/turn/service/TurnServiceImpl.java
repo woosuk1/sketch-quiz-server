@@ -9,9 +9,7 @@ import com.itcen.whiteboardserver.member.entity.Member;
 import com.itcen.whiteboardserver.member.repository.MemberRepository;
 import com.itcen.whiteboardserver.turn.dto.response.TurnResponse;
 import com.itcen.whiteboardserver.turn.dto.response.TurnResponseType;
-import com.itcen.whiteboardserver.turn.dto.response.data.CorrectData;
-import com.itcen.whiteboardserver.turn.dto.response.data.DrawerData;
-import com.itcen.whiteboardserver.turn.dto.response.data.TurnData;
+import com.itcen.whiteboardserver.turn.dto.response.data.*;
 import com.itcen.whiteboardserver.turn.entitiy.Correct;
 import com.itcen.whiteboardserver.turn.entitiy.Turn;
 import com.itcen.whiteboardserver.turn.mapper.TurnMapper;
@@ -26,6 +24,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -156,6 +155,7 @@ public class TurnServiceImpl implements TurnService {
         return true;
     }
 
+    @Transactional
     private void doTurnOver(Long gameId) {
         Game game = getGameByGameId(gameId);
         Turn turn = game.getCurrentTurn();
@@ -164,12 +164,73 @@ public class TurnServiceImpl implements TurnService {
             throw new RuntimeException("이미 끝난 턴입니다.");
         }
 
+        finalizeTurnScore(gameId);
+
         game.thisTurnDown();
         gameRepository.save(game);
         turn.doTurnOver();
         turnRepository.save(turn);
 
         applicationContext.getBean(TurnService.class).startTurn(gameId);
+    }
+
+    @Transactional
+    private void finalizeTurnScore(Long gameId) {
+        Game game = getGameByGameId(gameId);
+        Turn turn = game.getCurrentTurn();
+
+        //정답자 점수
+        List<Correct> corrects = correctRepository.findAllByTurnOrderByCreatedAtDesc(turn);
+        int score = 10;
+        for (Correct correct : corrects) {
+            GameParticipation gameParticipation = gameParticipationRepository.findByGameAndMember(game, correct.getMember())
+                    .orElseThrow(
+                            () -> new RuntimeException("게임, 회원에 해당하는 게임 참가이력이 없습니다.")
+                    );
+
+            gameParticipation.increaseScore(score);
+            score += 10;
+        }
+
+        //출제자 점수
+        int participationCnt = gameParticipationRepository.countByGame(game);
+        Member drawer = turn.getMember();
+
+        if (participationCnt - 1 == corrects.size()) {
+            int drawerScore = participationCnt / 2 * 10;
+
+            GameParticipation gameParticipation = gameParticipationRepository.findByGameAndMember(game, drawer).orElseThrow(
+                    () -> new RuntimeException("현재 게임, 출제자에 해당하는 게임 참여가 없습니다.")
+            );
+
+            gameParticipation.increaseScore(drawerScore);
+        }
+
+        broadcastTurnScore(gameId);
+    }
+
+    @Transactional
+    private void broadcastTurnScore(Long gameId) {
+        Game game = getGameByGameId(gameId);
+
+        List<GameParticipation> gameParticipations = gameParticipationRepository.findAllByGame(game);
+
+        List<MemberScore> memberScores = new ArrayList<>();
+        for (GameParticipation gameParticipation : gameParticipations) {
+            memberScores.add(
+                    new MemberScore(gameParticipation.getMember().getId(), gameParticipation.getScore())
+            );
+        }
+
+        TurnResponse<TurnQuitData> response = new TurnResponse<>(
+                TurnResponseType.FINISH,
+                new TurnQuitData(
+                        gameId,
+                        memberScores
+                )
+        );
+
+        messagingTemplate.convertAndSend("/topic/game/" + gameId, response);
     }
 
     private void broadcastTurnInfo(Long gameId, Turn turn) {
@@ -216,6 +277,8 @@ public class TurnServiceImpl implements TurnService {
     }
 
     private Game getGameByGameId(Long gameId) {
-        return gameRepository.getReferenceById(gameId);
+        return gameRepository.findById(gameId).orElseThrow(
+                () -> new RuntimeException("현재 gameId의 게임이 없습니다.")
+        );
     }
 }
