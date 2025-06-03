@@ -5,6 +5,7 @@ import com.itcen.whiteboardserver.game.session.GameSession;
 import com.itcen.whiteboardserver.member.repository.MemberRepository;
 import com.itcen.whiteboardserver.turn.dto.response.TurnResponse;
 import com.itcen.whiteboardserver.turn.dto.response.TurnResponseType;
+import com.itcen.whiteboardserver.turn.dto.response.data.CorrectData;
 import com.itcen.whiteboardserver.turn.service.TurnService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -35,7 +36,7 @@ public class ChattingServiceImpl implements ChattingService {
             throw new RuntimeException("채팅 요청한 회원이 출제자이기 때문에 채팅이 금지됩니다.");
         }
 
-        if(turnService.isAlreadyCorrect(chattingRequest.gameId(), memberId)){
+        if (turnService.isAlreadyCorrect(chattingRequest.gameId(), memberId)) {
             throw new RuntimeException("채팅 요청한 회원이 이미 정답을 맞춰 채팅이 금지됩니다.");
         }
 

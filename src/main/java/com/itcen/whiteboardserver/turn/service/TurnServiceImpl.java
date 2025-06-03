@@ -9,6 +9,7 @@ import com.itcen.whiteboardserver.member.entity.Member;
 import com.itcen.whiteboardserver.member.repository.MemberRepository;
 import com.itcen.whiteboardserver.turn.dto.response.TurnResponse;
 import com.itcen.whiteboardserver.turn.dto.response.TurnResponseType;
+import com.itcen.whiteboardserver.turn.dto.response.data.CorrectData;
 import com.itcen.whiteboardserver.turn.dto.response.data.DrawerData;
 import com.itcen.whiteboardserver.turn.dto.response.data.TurnData;
 import com.itcen.whiteboardserver.turn.entitiy.Correct;
@@ -107,6 +108,22 @@ public class TurnServiceImpl implements TurnService {
                 .build();
 
         correctRepository.save(correct);
+        broadcastCorrect(
+                new CorrectData(
+                        memberId,
+                        turn.getId(),
+                        game.getId()
+                )
+        );
+    }
+
+    private void broadcastCorrect(CorrectData correctData) {
+        TurnResponse<CorrectData> response = new TurnResponse(
+                TurnResponseType.CORRECT,
+                correctData
+        );
+
+        messagingTemplate.convertAndSend("/topic/game/" + correctData.gameId(), response);
     }
 
     @Override
