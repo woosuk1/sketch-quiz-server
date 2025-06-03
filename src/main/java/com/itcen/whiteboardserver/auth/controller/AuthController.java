@@ -38,13 +38,13 @@ public class AuthController {
     /**
      * (0) 회원 가입
      */
-    @PostMapping("/register")
-    public ResponseEntity<Void> register(
-            @RequestBody @Valid LoginRequest req
-    ) {
-        usersService.registerUser(req.getUsername(), req.getPassword());
-        return ResponseEntity.status(201).build();
-    }
+//    @PostMapping("/register")
+//    public ResponseEntity<Void> register(
+//            @RequestBody @Valid LoginRequest req
+//    ) {
+//        usersService.registerUser(req.getUsername(), req.getPassword());
+//        return ResponseEntity.status(201).build();
+//    }
 
     /**
      * 1) 로그인 처리
@@ -53,39 +53,40 @@ public class AuthController {
      *  - TokenService.issueTokens() 로 access/refresh 쿠키 설정
      *  - 클라이언트에는 200 OK만 반환 (토큰은 HttpOnly 쿠키로 자동 저장)
      */
-    @PostMapping("/login")
-    public ResponseEntity<Void> login(@Valid @RequestBody LoginRequest login,
-                                      HttpServletResponse response) {
-        try {
-            // 1. 인증 시도(PasswordEncoder, UserDetailsService 자동 적용)
-            Authentication auth = authManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(
-                            login.getUsername(), login.getPassword()
-                    )
-            );
-//        SecurityContextHolder.getContext().setAuthentication(auth);
-
-            CustomPrincipal principal = (CustomPrincipal) auth.getPrincipal();
-
-            // 현재 인증된 유저의 역할 리스트 추출
-            List<String> roles = auth.getAuthorities().stream()
-                    .map(GrantedAuthority::getAuthority)
-                    .collect(Collectors.toList());
-
-            // 쿠키에 access/refresh 토큰 세팅
-            tokenService.issueTokens(auth.getName(), principal.getNickname(), String.valueOf(principal.getId()), roles, response);
-
-            // Body 없이 200 OK 리턴
-            return ResponseEntity.ok().build();
-        }catch(AuthenticationException ex){
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-    }
+//    @PostMapping("/login")
+//    public ResponseEntity<Void> login(@Valid @RequestBody LoginRequest login,
+//                                      HttpServletResponse response) {
+//        try {
+//            // 1. 인증 시도(PasswordEncoder, UserDetailsService 자동 적용)
+//            Authentication auth = authManager.authenticate(
+//                    new UsernamePasswordAuthenticationToken(
+//                            login.getUsername(), login.getPassword()
+//                    )
+//            );
+////        SecurityContextHolder.getContext().setAuthentication(auth);
+//
+//            CustomPrincipal principal = (CustomPrincipal) auth.getPrincipal();
+//
+//            // 현재 인증된 유저의 역할 리스트 추출
+//            List<String> roles = auth.getAuthorities().stream()
+//                    .map(GrantedAuthority::getAuthority)
+//                    .collect(Collectors.toList());
+//
+//            // 쿠키에 access/refresh 토큰 세팅
+//            tokenService.issueTokens(auth.getName(), principal.getNickname(), String.valueOf(principal.getId()), roles, response);
+//
+//            // Body 없이 200 OK 리턴
+//            return ResponseEntity.ok().build();
+//        }catch(AuthenticationException ex){
+//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+//        }
+//    }
 
     /**
      * 2) 토큰 리프레시 엔드포인트
      *  - TokenService.rotateRefresh() 가 쿠키를 갱신해 줌
      *  - 200 OK 리턴
+     *  - 서버 상태 변화(state‐changing)”를 수반하기 때문에 Post 요청
      */
     @PostMapping("/oauth2/refresh")
     public ResponseEntity<Void> refresh(HttpServletRequest request,
