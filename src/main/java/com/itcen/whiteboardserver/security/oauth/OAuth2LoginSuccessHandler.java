@@ -7,6 +7,8 @@ import com.itcen.whiteboardserver.member.service.MemberService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
@@ -45,7 +47,21 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                 .collect(Collectors.toList());
 
         // 토큰 발급
-        tokenService.issueTokens(email, member.getNickname(), String.valueOf(member.getId()), roles, response);
+//        tokenService.issueTokens(email, member.getNickname(), String.valueOf(member.getId()), roles, response);
+
+        // 3) 토큰 발급: 서비스에서 두 개의 ResponseCookie 반환
+        ResponseCookie[] cookies = tokenService.issueTokens(
+                email,
+                member.getNickname(),
+                String.valueOf(member.getId()),
+                roles
+        );
+
+        // 4) 반환받은 쿠키들을 Response 헤더에 추가
+        //    (쿠키 객체 하나씩 toString()으로 헤더 값을 만들어 붙인다)
+        response.addHeader(HttpHeaders.SET_COOKIE, cookies[0].toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, cookies[1].toString());
+
 
         // 프론트엔드에 리디렉트
         response.sendRedirect("/");

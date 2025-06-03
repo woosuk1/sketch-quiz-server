@@ -15,7 +15,7 @@ public class GlobalExceptionResponse {
         this.httpStatus = errorCode.getHttpStatus();
     }
 
-    static GlobalExceptionResponse of(GlobalErrorCode errorCode) {
+    public static GlobalExceptionResponse of(GlobalErrorCode errorCode) {
         return new GlobalExceptionResponse(errorCode);
     }
 

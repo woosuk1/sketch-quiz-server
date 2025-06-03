@@ -10,7 +10,9 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -84,15 +86,22 @@ public class AuthController {
 
     /**
      * 2) 토큰 리프레시 엔드포인트
-     *  - TokenService.rotateRefresh() 가 쿠키를 갱신해 줌
-     *  - 200 OK 리턴
-     *  - 서버 상태 변화(state‐changing)”를 수반하기 때문에 Post 요청
+     *    - 클라이언트는 빈 바디로 "POST /api/auth/oauth2/refresh" 호출
+     *    - @CookieValue 로 "refresh_token" 쿠키 값을 바로 받아온다.
+     *    - TokenService가 검증 후 새 토큰 쿠키를 생성하여 반환.
      */
     @PostMapping("/oauth2/refresh")
-    public ResponseEntity<Void> refresh(HttpServletRequest request,
-                                        HttpServletResponse response) {
-        tokenService.rotateRefresh(request, response);
-        return ResponseEntity.ok().build();
+//    public ResponseEntity<Void> refresh(HttpServletRequest request,
+//                                        HttpServletResponse response) {
+    public ResponseEntity<Void> refresh(
+            @CookieValue(name = "refresh_token", required = false) String refreshToken
+    ) {
+//        tokenService.rotateRefresh(request, response);
+        ResponseCookie[] cookies =tokenService.rotateRefresh(refreshToken);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookies[0].toString())
+                .header(HttpHeaders.SET_COOKIE, cookies[1].toString())
+                .build();
     }
 
     /**
@@ -101,11 +110,16 @@ public class AuthController {
      *  - SecurityContext 비우고 204 No Content 리턴
      */
     @GetMapping("/logout")
-    public ResponseEntity<Void> logout(HttpServletRequest request,
-                                       HttpServletResponse response,
-                                       @AuthenticationPrincipal CustomPrincipal principal) {
-        tokenService.logout(request, response, principal);
-        return ResponseEntity.noContent().build();
+//    public ResponseEntity<Void> logout(HttpServletRequest request,
+//                                       HttpServletResponse response,
+//                                       @AuthenticationPrincipal CustomPrincipal principal) {
+    public ResponseEntity<Void> logout(@AuthenticationPrincipal CustomPrincipal principal) {
+//        tokenService.logout(request, response, principal);
+        ResponseCookie[] cookies = tokenService.logout(principal);
+        return ResponseEntity.noContent()
+                .header(HttpHeaders.SET_COOKIE, cookies[0].toString())
+                .header(HttpHeaders.SET_COOKIE, cookies[1].toString())
+                .build();
     }
 
     @GetMapping("/me")

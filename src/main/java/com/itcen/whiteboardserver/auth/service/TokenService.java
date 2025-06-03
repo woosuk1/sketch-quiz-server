@@ -1,5 +1,7 @@
 package com.itcen.whiteboardserver.auth.service;
 
+import com.itcen.whiteboardserver.global.exception.GlobalCommonException;
+import com.itcen.whiteboardserver.global.exception.GlobalErrorCode;
 import com.itcen.whiteboardserver.member.enums.MemberRole;
 import com.itcen.whiteboardserver.security.principal.CustomPrincipal;
 import io.jsonwebtoken.*;
@@ -55,11 +57,29 @@ public class TokenService {
         this.refreshTtl = Duration.ofSeconds(refreshSeconds);
     }
 
+    // -------------------------------------
+    // 1) 로그인 or OAuth 콜백 이후, 최초 토큰 발급 시 사용
+    // -------------------------------------
     /**
-     * Issue new access + refresh tokens and set as HttpOnly cookies
+     * 최초 로그인 또는 OAuth 콜백 직후에 호출.
+     * username, nickname, id, roles 정보를 바탕으로
+     * 액세스 토큰과 리프레시 토큰을 생성한 뒤,
+     * Redis에 JTI를 저장하고 ResponseCookie 배열을 반환한다.
+     *
+     * @param username  사용자 식별자(예: 이메일)
+     * @param nickname  닉네임
+     * @param id        사용자 테이블 PK(문자열 형태)
+     * @param roles     권한 목록(예: ["ROLE_USER","ROLE_ADMIN"])
+     * @return [0] = access_token 쿠키, [1] = refresh_token 쿠키
      */
-    public void issueTokens(String username, String nickname, String id, List<String> roles,
-                            HttpServletResponse response) {
+//    public void issueTokens(String username, String nickname, String id, List<String> roles,
+//                            HttpServletResponse response) {
+    public ResponseCookie[] issueTokens(
+            String username,
+            String nickname,
+            String id,
+            List<String> roles
+    ) {
         // 1) 기존 키 하나만 삭제할 필요 없이, 덮어쓰기
         String setKey = "refresh:" + username;
 
@@ -73,8 +93,12 @@ public class TokenService {
                 .set(setKey, jti, refreshTtl);
 
         // 4) 쿠키 세팅
-        addCookie(response, "access_token",  access,  accessTtl,  "/");
-        addCookie(response, "refresh_token", refresh, refreshTtl, "/api/auth/oauth2/refresh");
+//        addCookie(response, "access_token",  access,  accessTtl,  "/");
+//        addCookie(response, "refresh_token", refresh, refreshTtl, "/api/auth/oauth2/refresh");
+        ResponseCookie accessCookie = addCookie("access_token",  access,  accessTtl,  "/");
+        ResponseCookie refreshCookie = addCookie("refresh_token", refresh, refreshTtl, "/api/auth/oauth2/refresh");
+
+        return new ResponseCookie[]{ accessCookie, refreshCookie };
     }
 
 
@@ -82,7 +106,6 @@ public class TokenService {
      * Validate access token, return Authentication
      */
     public Authentication authenticateAccess(String token) {
-        if (token == null) return null;
         try {
             Claims claims = jwtParser.parseSignedClaims(token)
                     .getPayload();
@@ -108,43 +131,69 @@ public class TokenService {
 
             return new UsernamePasswordAuthenticationToken(principal, token, principal.getAuthorities());
         } catch (JwtException ex) {
-            return null;
+            log.error("Invalid JWT token: {}", ex.getMessage());
+            throw new GlobalCommonException(GlobalErrorCode.INVALID_ACCESS_TOKEN);
+//            return null;
         }
     }
 
+    // -------------------------------------
+    // 3) 리프레시 토큰 검증 및 토큰 재발급
+    // -------------------------------------
     /**
-     * Rotate refresh token on expiry
+     * 클라이언트가 보낸 리프레시 토큰을 검증하고,
+     * 유효하면 새 액세스/리프레시 토큰 쿠키를 생성하여 반환한다.
+     * 검증에 실패하면 GlobalCommonException을 던진다.
+     *
+     * @param old  클라이언트가 보낸 refresh_token 문자열(JWT)
+     * @return [0] = 새 access_token 쿠키, [1] = 새 refresh_token 쿠키
      */
-    public void rotateRefresh(HttpServletRequest request, HttpServletResponse response) {
-        String old = resolveCookie(request);
-        if (old == null) throw new JwtException("Missing refresh token");
+//    public void rotateRefresh(HttpServletRequest request, HttpServletResponse response) {
+    public ResponseCookie[] rotateRefresh(String old) {
+//        String old = resolveCookie(request);
+//        if (old == null) throw new JwtException("Missing refresh token");
+        if (old == null) throw new GlobalCommonException(GlobalErrorCode.REFRESH_TOKEN_EXPIRED);
 
-        Jws<Claims> claims = jwtParser.parseSignedClaims(old);
+        Jws<Claims> claims;
+
+        try {
+            claims = jwtParser.parseSignedClaims(old);
+        }catch (JwtException ex){
+            log.error("Invalid Refresh token: {}", ex.getMessage());
+            throw new GlobalCommonException(GlobalErrorCode.INVALID_REFRESH_TOKEN);
+        }
+
         String username = claims.getPayload().getSubject();
         String id = claims.getPayload().get("id", String.class);
         String nickname = claims.getPayload().get("nickname", String.class);
         String oldJti = claims.getPayload().getId();
-
+        @SuppressWarnings("unchecked")
+        List<String> roles = claims.getPayload().get("roles", List.class);
         // 1) Redis에 저장된 값과 비교
         String key      = "refresh:" + username;
         String storedJti = redis.opsForValue().get(key);
+
         if (!oldJti.equals(storedJti)) {
-            throw new JwtException("Invalid refresh token");
+//            throw new JwtException("Invalid refresh token");
+            throw new GlobalCommonException(GlobalErrorCode.INVALID_REFRESH_TOKEN);
         }
+
         // 2) 덮어쓰기 방식으로 신규 토큰 발급
-        List<String> roles = SecurityContextHolder.getContext().getAuthentication().getAuthorities()
-                .stream()
-                .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.toList());
+//        List<String> roles = SecurityContextHolder.getContext().getAuthentication().getAuthorities()
+//                .stream()
+//                .map(GrantedAuthority::getAuthority)
+//                .collect(Collectors.toList());
 
         // 재사용 issueTokens
-        issueTokens(username, nickname, id, roles, response);
+//        issueTokens(username, nickname, id, roles, response);
+        return issueTokens(username, nickname, id, roles);
     }
 
     /**
      * Logout: revoke all refresh tokens for current user
      */
-    public void logout(HttpServletRequest request, HttpServletResponse response, CustomPrincipal principal) {
+//    public void logout(HttpServletRequest request, HttpServletResponse response, CustomPrincipal principal) {
+    public ResponseCookie[] logout(CustomPrincipal principal) {
 //        CustomPrincipal principal = (CustomPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if (principal != null) {
             String user = principal.getEmail();
@@ -152,10 +201,15 @@ public class TokenService {
 
             redis.delete("refresh:" + user);
         }
-        clearCookie(response, "access_token");
-        clearCookie(response, "refresh_token");
+//        clearCookie(response, "access_token");
+//        clearCookie(response, "refresh_token");
+
+        ResponseCookie deleteAccessCookie = clearCookie("access_token");
+        ResponseCookie deleteRefreshCookie = clearCookie("refresh_token");
 
         SecurityContextHolder.clearContext();
+
+        return new ResponseCookie[]{ deleteAccessCookie, deleteRefreshCookie };
     }
 
     // --- internal helpers ---
@@ -175,14 +229,14 @@ public class TokenService {
                 .compact();
     }
 
-    private String resolveCookie(HttpServletRequest req) {
-        Cookie c = WebUtils.getCookie(req, "refresh_token");
-        return c != null ? c.getValue() : null;
-    }
+//    private String resolveCookie(HttpServletRequest req) {
+//        Cookie c = WebUtils.getCookie(req, "refresh_token");
+//        return c != null ? c.getValue() : null;
+//    }
 
     /** HttpOnly, Secure, SameSite=Lax 쿠키 추가 */
-    private void addCookie(HttpServletResponse res,
-                           String name, String value,
+//    private void addCookie(HttpServletResponse res,
+    private ResponseCookie addCookie(String name, String value,
                            Duration ttl, String path) {
         ResponseCookie cookie = ResponseCookie.from(name, value)
                 .httpOnly(true)
@@ -191,10 +245,12 @@ public class TokenService {
                 .path(path)
                 .maxAge(ttl)
                 .build();
-        res.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+//        res.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        return cookie;
     }
 
-    private void clearCookie(HttpServletResponse res, String name) {
+//    private void clearCookie(HttpServletResponse res, String name) {
+    private ResponseCookie clearCookie(String name) {
         ResponseCookie cookie = ResponseCookie.from(name, "")
                 .httpOnly(true)
 //                .secure(true)
@@ -202,6 +258,7 @@ public class TokenService {
                 .maxAge(Duration.ZERO)
                 .sameSite("Lax")
                 .build();
-        res.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+//        res.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        return cookie;
     }
 }

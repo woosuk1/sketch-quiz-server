@@ -1,6 +1,11 @@
 package com.itcen.whiteboardserver.security.filter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.itcen.whiteboardserver.auth.service.TokenService;
+import com.itcen.whiteboardserver.global.exception.GlobalCommonException;
+import com.itcen.whiteboardserver.global.exception.GlobalErrorCode;
+import com.itcen.whiteboardserver.global.exception.GlobalExceptionHandler;
+import com.itcen.whiteboardserver.global.exception.GlobalExceptionResponse;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -8,6 +13,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.JwtException;
@@ -28,9 +34,11 @@ import java.util.Objects;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final TokenService tokenService;
+    private final ObjectMapper objectMapper;
 
-    public JwtAuthenticationFilter(TokenService tokenService) {
+    public JwtAuthenticationFilter(TokenService tokenService, ObjectMapper objectMapper) {
         this.tokenService = tokenService;
+        this.objectMapper = objectMapper;
     }
     @Override
     protected void doFilterInternal(
@@ -52,14 +60,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             try {
                 // 2) 정상적인 경우: 토큰 검증 후 Authentication 반환
                 Authentication auth = tokenService.authenticateAccess(token);
-
-                if (auth != null) {
                     SecurityContextHolder.getContext().setAuthentication(auth);
-                }
-            } catch (JwtException invalid) {
+//            } catch (JwtException invalid) {
+            } catch (GlobalCommonException invalid) {
                 /* 설명. 이 때 catch 되는 예외는 서명 오류 등의 예외이다. */
                 log.info("Invalid access token for {} {}: {}", request.getMethod(), request.getRequestURI(), invalid.getMessage());
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Access token invalid");
+//                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "유효하지 않은 액세스 토큰입니다.");
+                sendErrorResponse(response,GlobalErrorCode.INVALID_ACCESS_TOKEN);
                 return;
             }
         }
@@ -70,5 +77,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
          *  3. public api
         * */
         filterChain.doFilter(request, response);
+    }
+
+
+    private void sendErrorResponse(HttpServletResponse response,GlobalErrorCode errorCode) throws IOException {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding("UTF-8");
+        // JSON 직렬화: { "code": 40101, "message": "Access Token Expired" }
+        GlobalExceptionResponse globalExceptionResponse = GlobalExceptionResponse.of(errorCode);
+        String json = objectMapper.writeValueAsString(globalExceptionResponse);
+        response.getWriter().write(json);
     }
 }
