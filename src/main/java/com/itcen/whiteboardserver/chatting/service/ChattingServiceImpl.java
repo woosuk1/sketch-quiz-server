@@ -46,10 +46,10 @@ public class ChattingServiceImpl implements ChattingService {
             message = chattingRequest.email() + "님이 정답을 맞추셨습니다.";
 
             turnService.correct(chattingRequest.gameId(), memberId);
-            turnService.turnOverIfPossible(chattingRequest.gameId());
         }
 
         broadcastChat(chattingRequest.gameId(), message);
+        turnService.turnOverIfPossible(chattingRequest.gameId());
     }
 
     private void broadcastChat(Long gameId, String message) {
