@@ -5,6 +5,7 @@ import com.itcen.whiteboardserver.game.entity.GameParticipation;
 import com.itcen.whiteboardserver.game.repository.GameParticipationRepository;
 import com.itcen.whiteboardserver.game.repository.GameRepository;
 import com.itcen.whiteboardserver.game.session.GameSession;
+import com.itcen.whiteboardserver.game.session.state.GameStatus;
 import com.itcen.whiteboardserver.member.entity.Member;
 import com.itcen.whiteboardserver.member.repository.MemberRepository;
 import com.itcen.whiteboardserver.turn.dto.response.TurnResponse;
@@ -49,7 +50,9 @@ public class TurnServiceImpl implements TurnService {
     @Override
     public void startTurn(Long gameId) {
         if (!gameSession.canGoNextTurn(gameId)) {
-            throw new RuntimeException("게임이 종료됩니다.");
+            quitGame(gameId);
+
+            return;
         }
 
         Game game = getGameByGameId(gameId);
@@ -114,6 +117,19 @@ public class TurnServiceImpl implements TurnService {
                         game.getId()
                 )
         );
+    }
+
+    @Transactional
+    private void quitGame(Long gameId) {
+        broadcastTurnScore(gameId, TurnResponseType.GAME_FINISH);
+
+        gameSession.removeSession(gameId);
+        Game game = getGameByGameId(gameId);
+
+        game.changeTurn(null);
+        game.quitGame();
+
+        gameRepository.save(game);
     }
 
     private void broadcastCorrect(CorrectData correctData) {
@@ -206,11 +222,11 @@ public class TurnServiceImpl implements TurnService {
             gameParticipation.increaseScore(drawerScore);
         }
 
-        broadcastTurnScore(gameId);
+        broadcastTurnScore(gameId, TurnResponseType.FINISH);
     }
 
     @Transactional
-    private void broadcastTurnScore(Long gameId) {
+    private void broadcastTurnScore(Long gameId, TurnResponseType type) {
         Game game = getGameByGameId(gameId);
 
         List<GameParticipation> gameParticipations = gameParticipationRepository.findAllByGame(game);
@@ -223,7 +239,7 @@ public class TurnServiceImpl implements TurnService {
         }
 
         TurnResponse<TurnQuitData> response = new TurnResponse<>(
-                TurnResponseType.FINISH,
+                type,
                 new TurnQuitData(
                         gameId,
                         memberScores

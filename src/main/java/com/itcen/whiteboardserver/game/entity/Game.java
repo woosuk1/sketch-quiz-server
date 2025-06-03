@@ -35,4 +35,8 @@ public class Game {
     public void thisTurnDown() {
         currentTurn = null;
     }
+
+    public void quitGame(){
+        status = GameStatus.ENDED;
+    }
 }
