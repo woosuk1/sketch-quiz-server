@@ -66,11 +66,10 @@ public class TurnServiceImpl implements TurnService {
         broadcastTurnInfo(gameId, turn);
         sendDrawInfoToDrawer(gameId, turn);
 
-        //scheduling
-        checkTurnOver(turn.getId());
+        scheduleTurnOver(turn.getId());
     }
 
-    private void checkTurnOver(Long turnId) {
+    private void scheduleTurnOver(Long turnId) {
         ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
         scheduler.schedule(() -> {
             TransactionTemplate txTemplate = new TransactionTemplate(transactionManager);
