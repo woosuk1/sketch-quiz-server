@@ -25,7 +25,6 @@ pipeline {
         DB_HOST = "${DB_HOST}"
         DB_USER = "${DB_USER}"
         DB_PASS = "${DB_PASS}"
-    
     }
 
     stages {
@@ -82,7 +81,7 @@ pipeline {
                 sshagent(credentials: ['webserver-ssh-key']) {
                     sh """
                         ssh -o StrictHostKeyChecking=no ubuntu@${SERVER_IP} 'mkdir -p ~/server-app'
-                        scp -o StrictHostKeyChecking=no docker-compose.yml ubuntu@${SERVER_IP}:~/server-app/
+                        scp -o StrictHostKeyChecking=no build/libs/*.jar docker-compose.yml ubuntu@${SERVER_IP}:~/server-app/
                         ssh -o StrictHostKeyChecking=no ubuntu@${SERVER_IP} '
                             cd ~/server-app
                             docker-compose down || true
