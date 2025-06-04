@@ -6,20 +6,16 @@ pipeline {
 
     environment {
         TIME_ZONE = 'Asia/Seoul'
-
-        // GitHub
         GIT_TARGET_BRANCH = 'infra/cicd'
         GIT_REPOSITORY_URL = 'https://github.com/itcen-project-2team/sketch-quiz-server.git'
         GIT_CREDENTIALS_ID = 'jenkins-credential'
 
-        // AWS ECR
         AWS_ECR_CREDENTIAL_ID = 'AWS_ECR_CREDENTIAL'
         AWS_REGION = 'ap-northeast-2'
-        AWS_ECR_URI = '010686621060.dkr.ecr.ap-northeast-2.amazonaws.com/2team/back-ecr'
+        AWS_ECR_URI = '010686621060.dkr.ecr.ap-northeast-2.amazonaws.com'
         ECR_REPOSITORY = "${AWS_ECR_URI}/2team/back-ecr"
         IMAGE_TAG = "${BUILD_NUMBER}"
 
-        // Deployment target
         SERVER_IP = "${SERVER_IP}"
     }
 
@@ -35,6 +31,12 @@ pipeline {
                 git branch: "${GIT_TARGET_BRANCH}",
                     credentialsId: "${GIT_CREDENTIALS_ID}",
                     url: "${GIT_REPOSITORY_URL}"
+            }
+        }
+
+        stage('Build Java') {
+            steps {
+                sh './gradlew clean build'
             }
         }
 
