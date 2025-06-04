@@ -6,16 +6,20 @@ pipeline {
 
     environment {
         TIME_ZONE = 'Asia/Seoul'
+
+        // GitHub
         GIT_TARGET_BRANCH = 'infra/cicd'
         GIT_REPOSITORY_URL = 'https://github.com/itcen-project-2team/sketch-quiz-server.git'
         GIT_CREDENTIALS_ID = 'jenkins-credential'
 
+        // AWS ECR
         AWS_ECR_CREDENTIAL_ID = 'AWS_ECR_CREDENTIAL'
         AWS_REGION = 'ap-northeast-2'
-        AWS_ECR_URI = '010686621060.dkr.ecr.ap-northeast-2.amazonaws.com'
-        ECR_REPOSITORY = "${AWS_ECR_URI}/2team/back-ecr"
+        ECR_REGISTRY = '010686621060.dkr.ecr.ap-northeast-2.amazonaws.com'
+        ECR_REPOSITORY = "${ECR_REGISTRY}/2team/back-ecr"
         IMAGE_TAG = "${BUILD_NUMBER}"
 
+        // Deployment target
         SERVER_IP = "${SERVER_IP}"
     }
 
@@ -34,11 +38,9 @@ pipeline {
             }
         }
 
-        stage('Build Java') {
+        stage('Gradle Build') {
             steps {
-                // sh './gradlew clean build'
                 sh './gradlew clean build -x test'
-
             }
         }
 
@@ -49,7 +51,7 @@ pipeline {
                         def status = sh(
                             script: '''
                                 set -eux
-                                aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ECR_URI
+                                aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
                             ''',
                             returnStatus: true
                         )
@@ -74,6 +76,7 @@ pipeline {
             steps {
                 sshagent(credentials: ['webserver-ssh-key']) {
                     sh """
+                    ssh -o StrictHostKeyChecking=no ubuntu@${SERVER_IP} 'mkdir -p ~/server-app'
                     scp -o StrictHostKeyChecking=no docker-compose.yml ubuntu@${SERVER_IP}:~/server-app/
                     ssh -o StrictHostKeyChecking=no ubuntu@${SERVER_IP} '
                         cd ~/server-app
@@ -82,6 +85,12 @@ pipeline {
                     '
                     """
                 }
+            }
+        }
+
+        stage('Cleanup') {
+            steps {
+                sh "docker image prune -f --all"
             }
         }
     }
