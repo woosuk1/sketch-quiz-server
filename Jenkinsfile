@@ -9,7 +9,7 @@ pipeline {
 
         // GitHub
         GIT_TARGET_BRANCH = 'infra/cicd'
-        GIT_REPOSITORY_URL = 'https://github.com/itcen-project-2team/drawcen-web.git'
+        GIT_REPOSITORY_URL = 'https://github.com/itcen-project-2team/sketch-quiz-server.git'
         GIT_CREDENTIALS_ID = 'jenkins-credential'
 
         // AWS ECR
