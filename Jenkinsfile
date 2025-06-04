@@ -73,23 +73,26 @@ pipeline {
 
         stage('Prepare Env') {
             steps {
-                sh 'cp /home/ubuntu/.env .'
+                sshagent(credentials: ['webserver-ssh-key']) {
+                    sh """
+                        scp -o StrictHostKeyChecking=no ubuntu@${SERVER_IP}:/home/ubuntu/.env .
+                    """
+                }
             }
         }
 
-        
         stage('Deploy with docker-compose') {
             steps {
                 sshagent(credentials: ['webserver-ssh-key']) {
                     sh """
-                    ssh -o StrictHostKeyChecking=no ubuntu@${SERVER_IP} 'mkdir -p ~/server-app'
-                    scp -o StrictHostKeyChecking=no .env ubuntu@${SERVER_IP}:~/server-app/
-                    scp -o StrictHostKeyChecking=no docker-compose.yml ubuntu@${SERVER_IP}:~/server-app/
-                    ssh -o StrictHostKeyChecking=no ubuntu@${SERVER_IP} '
-                        cd ~/server-app
-                        docker-compose down || true
-                        IMAGE_TAG=$IMAGE_TAG docker-compose up -d --build
-                    '
+                        ssh -o StrictHostKeyChecking=no ubuntu@${SERVER_IP} 'mkdir -p ~/server-app'
+                        scp -o StrictHostKeyChecking=no .env ubuntu@${SERVER_IP}:~/server-app/
+                        scp -o StrictHostKeyChecking=no docker-compose.yml ubuntu@${SERVER_IP}:~/server-app/
+                        ssh -o StrictHostKeyChecking=no ubuntu@${SERVER_IP} '
+                            cd ~/server-app
+                            docker-compose down || true
+                            IMAGE_TAG=$IMAGE_TAG docker-compose up -d --build
+                        '
                     """
                 }
             }
