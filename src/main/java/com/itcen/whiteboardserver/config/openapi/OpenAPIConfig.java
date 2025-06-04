@@ -39,5 +39,13 @@ public class OpenAPIConfig {
                 .build();
     }
 
+    @Bean
+    public GroupedOpenApi allApi() {
+        return GroupedOpenApi.builder()
+                .group("모든 API")
+                .pathsToMatch("/api/**") // 특정 경로만 포함
+                .build();
+    }
+
 
 }

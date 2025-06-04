@@ -9,13 +9,14 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 
 @Entity
 @EntityListeners(AuditingEntityListener.class)
 @Table(name = "member")
 @Getter
-@Setter
+//@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
@@ -25,8 +26,8 @@ public class Member {
     @Column(name = "id", nullable = false)
     private Long id;
 
-    @Column(name = "name")
-    private String name;
+    @Column(name = "nickname", nullable = false, unique = true)
+    private String nickname;
 
     @Column(name = "email", unique = true, nullable = false)
     private String email;
@@ -39,12 +40,12 @@ public class Member {
     private LocalDateTime createdAt; // 생성 시간
 
     @LastModifiedDate
-    @Column(nullable = false, updatable = false)
+    @Column(nullable = false)
     private LocalDateTime updatedAt; // 수정 시간
 
     @Column(name = "member_role", nullable = false)
     @Enumerated(EnumType.STRING)
-    private MemberRole memberRole;
+    private Set<MemberRole> memberRole;
 
     @Column(name = "provider", nullable = false)
     @Enumerated(EnumType.STRING)
