@@ -73,7 +73,7 @@ pipeline {
 
         stage('Prepare Env') {
             steps {
-                sh 'cp /home/ubuntu/.env .'
+                sh 'sudo cp /home/ubuntu/.env .'
             }
         }
 
