@@ -8,7 +8,7 @@ public class GameMapper {
     public static GameParticipantResponse memberToGameParticipantResponse(Member member) {
         return GameParticipantResponse.builder()
                 .memberId(member.getId())
-                .nickName(member.getName())
+                .nickName(member.getNickname())
                 .score(0)
                 .build();
     }
