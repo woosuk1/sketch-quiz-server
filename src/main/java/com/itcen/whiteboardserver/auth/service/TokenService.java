@@ -198,21 +198,29 @@ public class TokenService {
 //    public void logout(HttpServletRequest request, HttpServletResponse response, CustomPrincipal principal) {
     public ResponseCookie[] logout(CustomPrincipal principal) {
 //        CustomPrincipal principal = (CustomPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (principal != null) {
-            String user = principal.getEmail();
-            log.debug("Logging out user: {}", principal.getEmail());
 
-            redis.delete("refresh:" + user);
+        // 1) Redis에서 refresh 토큰 삭제 시도
+        try {
+            if (principal != null) {
+                String user = principal.getEmail();
+                log.debug("Logging out user: {}", user);
+                redis.delete("refresh:" + user);
+            }
+        } catch (Exception e) {
+            // Redis 삭제 과정에서 예외가 나더라도, 로그만 기록하고 흐름은 계속 이어간다.
+            log.error("Error deleting refresh token from Redis: {}", e.getMessage());
         }
+
+        // 2) 무조건 쿠키를 삭제 (null 체크 없이), SecurityContext 초기화
+        ResponseCookie deleteAccessCookie  = clearCookie("access_token");
+        ResponseCookie deleteRefreshCookie = clearCookie("refresh_token");
+        SecurityContextHolder.clearContext();
+
+        // 3) 삭제용 쿠키 배열 반환
+        return new ResponseCookie[]{ deleteAccessCookie, deleteRefreshCookie };
 //        clearCookie(response, "access_token");
 //        clearCookie(response, "refresh_token");
 
-        ResponseCookie deleteAccessCookie = clearCookie("access_token");
-        ResponseCookie deleteRefreshCookie = clearCookie("refresh_token");
-
-        SecurityContextHolder.clearContext();
-
-        return new ResponseCookie[]{ deleteAccessCookie, deleteRefreshCookie };
     }
 
     // --- internal helpers ---
