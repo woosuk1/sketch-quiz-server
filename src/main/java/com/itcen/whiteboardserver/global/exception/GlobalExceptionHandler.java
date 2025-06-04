@@ -45,7 +45,10 @@ public class GlobalExceptionHandler {
         Map<String, Object> response = new HashMap<>();
         response.put("message", e.getErrorCode().getMsg());
         response.put("code", e.getErrorCode().getCode());
-        return new ResponseEntity<>(response, e.getErrorCode().getHttpStatus());
+//        return new ResponseEntity<>(response, e.getErrorCode().getHttpStatus());
+        return ResponseEntity
+                .status(e.getErrorCode().getHttpStatus())
+                .body(response);
     }
 
     @ExceptionHandler(Exception.class)

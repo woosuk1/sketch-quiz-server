@@ -89,8 +89,14 @@ public class TokenService {
 
         // 3) 새 JTI만 저장 (overwrite)
         String jti = jwtParser.parseSignedClaims(refresh).getPayload().getId();
-        redis.opsForValue()
-                .set(setKey, jti, refreshTtl);
+
+        try {
+            redis.opsForValue()
+                    .set(setKey, jti, refreshTtl);
+        } catch(Exception e) {
+            log.error("Error saving refresh token to Redis: {}", e.getMessage());
+            throw new GlobalCommonException(GlobalErrorCode.REDIS_ERROR);
+        }
 
         // 4) 쿠키 세팅
 //        addCookie(response, "access_token",  access,  accessTtl,  "/");

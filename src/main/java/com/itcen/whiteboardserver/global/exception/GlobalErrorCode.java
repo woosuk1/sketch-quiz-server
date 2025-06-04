@@ -50,13 +50,15 @@ public enum GlobalErrorCode {
      * 이 응답 코드는 웹에서 반복적으로 발생하기 때문에 가장 유명할지도 모릅니다.
      */
     ENDPOINT_NOT_FOUND(40400, HttpStatus.NOT_FOUND, "존재하지 않는 엔드포인트입니다."),
+    MEMBER_NOT_FOUND(40401, HttpStatus.NOT_FOUND, "존재하지 않는 회원입니다."),
 
     /**
      * 500(Internal Server Error)
      * 서버가 처리 방법을 모르는 상황이 발생했습니다. 서버는 아직 처리 방법을 알 수 없습니다.
      */
     INTERNAL_SERVER_ERROR(50000, HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류입니다."),
-    DATABASE_CONNECTION_FAILURE(50001, HttpStatus.INTERNAL_SERVER_ERROR, "데이터 베이스 연결 실패입니다."),;
+    DATABASE_CONNECTION_FAILURE(50001, HttpStatus.INTERNAL_SERVER_ERROR, "데이터 베이스 연결 실패입니다."),
+    REDIS_ERROR(50002, HttpStatus.INTERNAL_SERVER_ERROR, "레디스 저장 실패입니다.");
 
 
     private final Integer code;

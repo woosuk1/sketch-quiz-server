@@ -110,7 +110,7 @@ public class AuthController {
      *  - TokenService.logout() 으로 Redis 키 삭제 & 쿠키 만료
      *  - SecurityContext 비우고 204 No Content 리턴
      */
-    @GetMapping("/logout")
+    @DeleteMapping("/logout")
 //    public ResponseEntity<Void> logout(HttpServletRequest request,
 //                                       HttpServletResponse response,
 //                                       @AuthenticationPrincipal CustomPrincipal principal) {

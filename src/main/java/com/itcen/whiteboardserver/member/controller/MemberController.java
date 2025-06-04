@@ -34,6 +34,10 @@ public class MemberController {
     public ResponseEntity<MemberDTO> getMember(@AuthenticationPrincipal CustomPrincipal principal) {
 //        MemberDTO member = memberService.getMemberById(id);
 
+        if (principal == null) {
+            throw new GlobalCommonException(GlobalErrorCode.MEMBER_NOT_FOUND);
+        }
+
         MemberDTO member = MemberDTO.builder()
                 .id(principal.getId())
                 .nickname(principal.getNickname())
