@@ -8,7 +8,7 @@ pipeline {
         TIME_ZONE = 'Asia/Seoul'
 
         // GitHub
-        GIT_TARGET_BRANCH = 'develop'
+        GIT_TARGET_BRANCH = 'infra/cicd'
         GIT_REPOSITORY_URL = 'https://github.com/itcen-project-2team/drawcen-web.git'
         GIT_CREDENTIALS_ID = 'jenkins-credential'
 
