@@ -4,16 +4,18 @@ package com.itcen.whiteboardserver.config;
 import com.itcen.whiteboardserver.auth.service.CustomOAuth2UserService;
 import com.itcen.whiteboardserver.auth.service.CustomOidcUserService;
 import com.itcen.whiteboardserver.auth.service.UserDetailsServiceImpl;
+import com.itcen.whiteboardserver.global.exception.GlobalCommonException;
+import com.itcen.whiteboardserver.global.exception.GlobalErrorCode;
 import com.itcen.whiteboardserver.security.filter.JwtAuthenticationFilter;
 import com.itcen.whiteboardserver.security.filter.RedisRateLimitingFilter;
 import com.itcen.whiteboardserver.security.filter.RequestResponseLoggingFilter;
-import com.itcen.whiteboardserver.security.oauth.CookieAuthorizationRequestRepository;
-import com.itcen.whiteboardserver.security.oauth.OAuth2LoginSuccessHandler;
+import com.itcen.whiteboardserver.security.handler.CookieAuthorizationRequestRepository;
+import com.itcen.whiteboardserver.security.handler.CustomAuthenticationEntryPoint;
+import com.itcen.whiteboardserver.security.handler.OAuth2LoginSuccessHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -24,9 +26,9 @@ import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandlerImpl;
-import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.context.SecurityContextHolderFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
@@ -117,16 +119,18 @@ public class SecurityConfig {
                 // Authorize endpoints
                 .authorizeHttpRequests(auth -> auth
 //                        .requestMatchers("/static/**", "/index.html", "/static/**", "/login.html","/images/**", "/oauth2.html","/favicon.ico", "/css/**", "/js/**").permitAll()
-//                        .requestMatchers("/api/auth/**", "/api/member/**").permitAll()
+//                        .requestMatchers("/api/member/**").permitAll()
 //                        .requestMatchers("/").permitAll()
-//                        .requestMatchers("/login/oauth2/**", "/oauth2/**").permitAll()
+//                        .requestMatchers("/login/oauth2/**", "/oauth2/**", "/api/auth/**").permitAll()
 //                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 //                        .anyRequest().authenticated()
                         .anyRequest().permitAll()
                 )
 
+                /* 설명. 보호된 api 접근 시*/
                 .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+//                        .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+                        .authenticationEntryPoint(new CustomAuthenticationEntryPoint(GlobalErrorCode.ACCESS_TOKEN_EXPIRED))
                         .accessDeniedHandler(new AccessDeniedHandlerImpl())
                 );
 

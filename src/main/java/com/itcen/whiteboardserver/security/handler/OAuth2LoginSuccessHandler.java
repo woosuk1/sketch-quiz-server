@@ -1,4 +1,4 @@
-package com.itcen.whiteboardserver.security.oauth;
+package com.itcen.whiteboardserver.security.handler;
 
 import com.itcen.whiteboardserver.auth.service.TokenService;
 import com.itcen.whiteboardserver.member.dto.MemberDTO;
@@ -10,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;

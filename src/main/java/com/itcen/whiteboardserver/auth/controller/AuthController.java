@@ -4,6 +4,7 @@ import com.itcen.whiteboardserver.auth.dto.LoginRequest;
 import com.itcen.whiteboardserver.auth.service.TokenService;
 import com.itcen.whiteboardserver.auth.service.UserDetailsServiceImpl;
 import com.itcen.whiteboardserver.security.principal.CustomPrincipal;
+import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -94,7 +95,7 @@ public class AuthController {
 //    public ResponseEntity<Void> refresh(HttpServletRequest request,
 //                                        HttpServletResponse response) {
     public ResponseEntity<Void> refresh(
-            @CookieValue(name = "refresh_token", required = false) String refreshToken
+            @Parameter(hidden = true) @CookieValue(name = "refresh_token", required = false) String refreshToken
     ) {
 //        tokenService.rotateRefresh(request, response);
         ResponseCookie[] cookies =tokenService.rotateRefresh(refreshToken);
