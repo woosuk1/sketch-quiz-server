@@ -1,5 +1,7 @@
 package com.itcen.whiteboardserver.member.service;
 
+import com.itcen.whiteboardserver.global.exception.GlobalCommonException;
+import com.itcen.whiteboardserver.global.exception.GlobalErrorCode;
 import com.itcen.whiteboardserver.member.dto.MemberDTO;
 import com.itcen.whiteboardserver.member.dto.NicknameDTO;
 import com.itcen.whiteboardserver.member.entity.Member;
@@ -20,18 +22,10 @@ public class MemberServiceImpl implements MemberService {
     private final NicknamesRepository nicknamesRepository;
 
     @Override
-    public MemberDTO getMemberById(Long id) {
-
-        return memberRepository.findById(id)
-                .map(member -> new MemberDTO(member.getId(), member.getNickname(), member.getEmail(), member.getMemberRole()))
-                .orElse(null);
-    }
-
-    @Override
     public MemberDTO getMemberByEmail(String email) {
         return memberRepository.findByEmail(email)
                 .map(member -> new MemberDTO(member.getId(), member.getNickname(), member.getEmail() , member.getMemberRole()))
-                .orElse(null);
+                .orElseThrow(() -> new GlobalCommonException(GlobalErrorCode.MEMBER_NOT_FOUND));
     }
 
 
@@ -62,6 +56,8 @@ public class MemberServiceImpl implements MemberService {
         * */
 
         NicknameDTO nicknameDTO = getRandomNickname();
+        MemberDTO memberDTO = null;
+
         if (nicknameDTO != null) {
             Long memberId = principal.getId();
 
@@ -75,7 +71,7 @@ public class MemberServiceImpl implements MemberService {
                 // 기존 닉네임은 is_used를 false로 변경
                 nicknamesRepository.updateIsUsedByNickname(principal.getNickname());
 
-                return new MemberDTO(
+                memberDTO = new MemberDTO(
                         memberId,
                         nicknameDTO.getNickname(),
                         principal.getEmail(),
@@ -85,10 +81,10 @@ public class MemberServiceImpl implements MemberService {
             } catch (Exception e) {
                 // 예외 처리 로직 추가 (예: 로그 기록, 사용자에게 에러 메시지 전달 등)
                 log.error("Error updating nickname for member ID: {}", memberId, e);
+                throw new GlobalCommonException(GlobalErrorCode.NICKNAME_UPDATE_FAILED);
             }
-//            return getMemberById(memberId);
         }
-        return null;
+        return memberDTO;
     }
 
 }

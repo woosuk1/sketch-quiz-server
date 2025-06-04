@@ -1,7 +1,5 @@
 package com.itcen.whiteboardserver.global.exception;
 
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessResourceFailureException;
@@ -45,7 +43,9 @@ public class GlobalExceptionHandler {
         Map<String, Object> response = new HashMap<>();
         response.put("message", e.getErrorCode().getMsg());
         response.put("code", e.getErrorCode().getCode());
-        return new ResponseEntity<>(response, e.getErrorCode().getHttpStatus());
+        return ResponseEntity
+                .status(e.getErrorCode().getHttpStatus())
+                .body(response);
     }
 
     @ExceptionHandler(Exception.class)

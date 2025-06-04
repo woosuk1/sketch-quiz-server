@@ -16,8 +16,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.jwt.JwtException;
-import org.springframework.security.oauth2.jwt.JwtValidationException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.WebUtils;
@@ -61,11 +59,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 // 2) 정상적인 경우: 토큰 검증 후 Authentication 반환
                 Authentication auth = tokenService.authenticateAccess(token);
                     SecurityContextHolder.getContext().setAuthentication(auth);
-//            } catch (JwtException invalid) {
             } catch (GlobalCommonException invalid) {
                 /* 설명. 이 때 catch 되는 예외는 서명 오류 등의 예외이다. */
                 log.info("Invalid access token for {} {}: {}", request.getMethod(), request.getRequestURI(), invalid.getMessage());
-//                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "유효하지 않은 액세스 토큰입니다.");
                 sendErrorResponse(response,GlobalErrorCode.INVALID_ACCESS_TOKEN);
                 return;
             }

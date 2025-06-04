@@ -5,10 +5,7 @@ import com.itcen.whiteboardserver.member.dto.NicknameDTO;
 import com.itcen.whiteboardserver.security.principal.CustomPrincipal;
 
 public interface MemberService {
-    // Define the methods that will be implemented in the service class
-    MemberDTO getMemberById(Long id);
 
-//    String getRandomNickname();
     NicknameDTO getRandomNickname();
 
     MemberDTO postChangeNickname(CustomPrincipal principal);
