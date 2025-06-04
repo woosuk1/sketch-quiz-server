@@ -13,7 +13,7 @@ pipeline {
         GIT_CREDENTIALS_ID = 'jenkins-credential'
 
         // AWS ECR
-        AWS_ECR_CREDENTIAL_ID = 'AWS_ECR_CREDENTIAL'
+        AWS_ECR_CREDENTIAL_ID = 'AWS_ECR_CREDENTIAL'  // 반드시 'AWS Credentials' 타입으로 Jenkins에 등록돼 있어야 함
         AWS_REGION = 'ap-northeast-2'
         ECR_REGISTRY = '010686621060.dkr.ecr.ap-northeast-2.amazonaws.com'
         ECR_REPOSITORY = "${ECR_REGISTRY}/2team/back-ecr"
@@ -40,9 +40,9 @@ pipeline {
 
         stage('Login to ECR') {
             steps {
-                withCredentials([usernamePassword(credentialsId: "${AWS_ECR_CREDENTIAL_ID}", usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                withAWS(credentials: "${AWS_ECR_CREDENTIAL_ID}", region: "${AWS_REGION}") {
                     sh '''
-                        aws --region $AWS_REGION ecr get-login-password | docker login --username AWS --password-stdin $ECR_REGISTRY
+                        aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
                     '''
                 }
             }
