@@ -5,7 +5,6 @@ import com.itcen.whiteboardserver.game.entity.GameParticipation;
 import com.itcen.whiteboardserver.game.repository.GameParticipationRepository;
 import com.itcen.whiteboardserver.game.repository.GameRepository;
 import com.itcen.whiteboardserver.game.session.GameSession;
-import com.itcen.whiteboardserver.game.session.state.GameStatus;
 import com.itcen.whiteboardserver.member.entity.Member;
 import com.itcen.whiteboardserver.member.repository.MemberRepository;
 import com.itcen.whiteboardserver.turn.dto.response.TurnResponse;
@@ -256,7 +255,7 @@ public class TurnServiceImpl implements TurnService {
     }
 
     private void sendDrawInfoToDrawer(Long gameId, Turn turn) {
-        TurnResponse<String> response = new TurnResponse(
+        TurnResponse<DrawerData> response = new TurnResponse(
                 TurnResponseType.DRAWER,
                 new DrawerData(
                         turn.getQuizWord(),

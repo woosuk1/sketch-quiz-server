@@ -74,6 +74,11 @@
 </div>
 
 <div>
+    <h3>그리기</h3>
+    <button id="sendDraw" disabled>선분 보내기</button>
+</div>
+
+<div>
     <h3>로그</h3>
     <div id="log"></div>
 </div>
@@ -84,6 +89,7 @@
     let errorSubscription = null;
     let currentUser = null;
     let currentGameId = null;
+    let currentTurnId = null;
 
     function addLogEntry(message, type) {
         const logDiv = document.getElementById('log');
@@ -150,6 +156,7 @@
         document.getElementById('leaveRoom').disabled = !isConnected;
         document.getElementById('startGame').disabled = !isConnected;
         document.getElementById('sendChat').disabled = !isConnected || !currentGameId;
+        document.getElementById('sendDraw').disabled = !isConnected || !currentGameId;
     }
 
     document.getElementById('connect').addEventListener('click', function () {
@@ -224,11 +231,22 @@
 
                 stompClient.subscribe('/topic/game/' + currentGameId, msg => {
                     addLogEntry('턴 메시지: ' + msg.body, 'received');
+                    const parsed = JSON.parse(msg.body);
+                    if (parsed.type === 'TURN') {
+                        currentTurnId = parsed.data.turnId;
+                        addLogEntry('새 턴 시작! turnId=' + currentTurnId, 'received');
+                    }
                 });
+
                 stompClient.subscribe('/user/topic/game/' + currentGameId, msg => {
                     addLogEntry('턴 메시지: ' + msg.body, 'received');
                 });
+
                 stompClient.subscribe('/topic/game/' + currentGameId + '/chat', msg => {
+                    addLogEntry('채팅 메시지: ' + msg.body, 'received');
+                });
+
+                stompClient.subscribe('/topic/game/' + currentGameId + '/draw', msg => {
                     addLogEntry('채팅 메시지: ' + msg.body, 'received');
                 });
             }
@@ -255,7 +273,6 @@
         addLogEntry('게임 시작 요청 전송: roomCode=' + roomCode, 'sent');
     });
 
-    // ✅ 채팅 전송 버튼
     document.getElementById('sendChat').addEventListener('click', function () {
         const message = document.getElementById('chatInput').value.trim();
         if (!message || !currentGameId || stompClient === null) {
@@ -265,6 +282,26 @@
         stompClient.send(`/app/game/${currentGameId}/chat`, {}, message);
         addLogEntry('채팅 전송: ' + message, 'sent');
         document.getElementById('chatInput').value = '';
+    });
+
+    document.getElementById('sendDraw').addEventListener('click', function () {
+        if (!currentGameId || stompClient === null || currentTurnId === null) {
+            addLogEntry('게임 또는 턴 정보가 없습니다.', 'error');
+            return;
+        }
+
+        const drawData = {
+            turnId: currentTurnId,
+            color: 'black',
+            width: 5,
+            points: [
+                { x: 10, y: 20 },
+                { x: 15, y: 25 }
+            ]
+        };
+
+        stompClient.send(`/app/game/${currentGameId}/draw`, {}, JSON.stringify(drawData));
+        addLogEntry('그리기 데이터 전송: ' + JSON.stringify(drawData), 'sent');
     });
 
     document.addEventListener('DOMContentLoaded', function () {
