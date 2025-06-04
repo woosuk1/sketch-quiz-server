@@ -8,6 +8,8 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      MONGODB_URI: ${MONGODB_URI}
+
     volumes:
       - mongo-data:/data/db
 
@@ -15,6 +17,9 @@ services:
     image: redis
     ports:
       - "6379:6379"
+    environment:
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
     volumes:
       - redis-data:/data
 
