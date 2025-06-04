@@ -2,6 +2,7 @@ package com.itcen.whiteboardserver.member.controller;
 
 import com.itcen.whiteboardserver.global.exception.GlobalCommonException;
 import com.itcen.whiteboardserver.global.exception.GlobalErrorCode;
+import com.itcen.whiteboardserver.member.dto.MemberResponseDTO;
 import com.itcen.whiteboardserver.security.principal.CustomPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import com.itcen.whiteboardserver.member.dto.MemberDTO;
@@ -30,13 +31,13 @@ public class MemberController {
                     현재 로그인한 사용자의 정보를 가져옵니다.
                     """
     )
-    public ResponseEntity<MemberDTO> getMember(@AuthenticationPrincipal CustomPrincipal principal) {
+    public ResponseEntity<MemberResponseDTO> getMember(@AuthenticationPrincipal CustomPrincipal principal) {
 
         if (principal == null) {
             throw new GlobalCommonException(GlobalErrorCode.MEMBER_NOT_FOUND);
         }
 
-        MemberDTO member = MemberDTO.builder()
+        MemberResponseDTO member = MemberResponseDTO.builder()
                 .id(principal.getId())
                 .nickname(principal.getNickname())
                 .email(principal.getEmail())
@@ -54,8 +55,8 @@ public class MemberController {
                     현재 로그인한 사용자의 닉네임을 랜덤으로 재설정합니다.
                     """
     )
-    public ResponseEntity<MemberDTO> postChangeNickname(@AuthenticationPrincipal CustomPrincipal principal) {
-        MemberDTO member = memberService.postChangeNickname(principal);
+    public ResponseEntity<MemberResponseDTO> postChangeNickname(@AuthenticationPrincipal CustomPrincipal principal) {
+        MemberResponseDTO member = memberService.postChangeNickname(principal);
 
         return ResponseEntity.ok()
                 .body(member);
