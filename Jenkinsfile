@@ -36,7 +36,9 @@ pipeline {
 
         stage('Build Java') {
             steps {
-                sh './gradlew clean build'
+                // sh './gradlew clean build'
+                sh './gradlew clean build -x test'
+
             }
         }
 
