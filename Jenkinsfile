@@ -21,6 +21,10 @@ pipeline {
 
         // Deployment target
         SERVER_IP = "${SERVER_IP}"
+
+        // Mongo environment variables (필요 시 추가)
+        MONGO_INITDB_ROOT_USERNAME = credentials('mongo-root-username')
+        MONGO_INITDB_ROOT_PASSWORD = credentials('mongo-root-password')
     }
 
     stages {
@@ -78,11 +82,13 @@ pipeline {
                     sh """
                     ssh -o StrictHostKeyChecking=no ubuntu@${SERVER_IP} 'mkdir -p ~/server-app'
                     scp -o StrictHostKeyChecking=no docker-compose.yml ubuntu@${SERVER_IP}:~/server-app/
-                    ssh -o StrictHostKeyChecking=no ubuntu@${SERVER_IP} '
-                        cd ~/server-app
-                        docker-compose down || true
-                        IMAGE_TAG=$IMAGE_TAG docker-compose up -d --build
-                    '
+                    ssh -o StrictHostKeyChecking=no ubuntu@${SERVER_IP} "
+                        export MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME} &&
+                        export MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD} &&
+                        cd ~/server-app &&
+                        docker-compose down || true &&
+                        IMAGE_TAG=${IMAGE_TAG} docker-compose up -d --build
+                    "
                     """
                 }
             }
