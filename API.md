@@ -4,9 +4,10 @@
 
 ## 수정 이력
 
-| 버전  | 날짜         | 작성자 | 변경 내용 |
-|-----|------------|-----|-------|
-| 1.0 | 2025-06-02 | 임혁  | 최초 작성 |
+| 버전  | 날짜         | 작성자 | 변경 내용          |
+|-----|------------|-----|----------------|
+| 1.0 | 2025-06-02 | 임혁  | 최초 작성          |
+| 1.1 | 2025-06-04 | 김유진 | 게임 진행 관련 내용 추가 | 
 
 ## 목차
 
@@ -36,20 +37,45 @@ WebSocket 연결은 JWT 토큰 기반 인증을 사용합니다.
 - SockJS 지원: O
 - 인증 방식: 쿠키의 `access_token` 사용
 
-### STOMP 엔드포인트
+### STOMP 엔드포인트 (Client -> Server )
 
-| 엔드포인트             | 설명       | 요청 본문              | 응답                                      |
-|-------------------|----------|--------------------|-----------------------------------------|
-| `/app/room/join`  | 방 참여하기   | `RoomJoinRequest`  | 없음 (`/topic/room/{roomId}` 토픽으로 브로드캐스트) |
-| `/app/room/leave` | 방 나가기    | 없음                 | 없음 (`/topic/room/{roomId}` 토픽으로 브로드캐스트) |
+| 엔드포인트             | 설명       | 요청 본문           | 응답                                      |
+|-------------------|----------|-----------------|-----------------------------------------|
+| `/app/room/join`  | 방 참여하기   | `RoomJoinRequest` | 없음 (`/topic/room/{roomId}` 토픽으로 브로드캐스트) |
+| `/app/room/leave` | 방 나가기    | 없음              | 없음 (`/topic/room/{roomId}` 토픽으로 브로드캐스트) |
 | `/app/game/start` | 게임 시작 요청 | `GameStartRequest` | 없음 (`/topic/room/{roomId}` 토픽으로 브로드캐스트) |
+| `/app/game/{gameId}/chat` | 채팅 전송    | `String`        | 없음 (`/topic/game/{gameId}/chat` 토픽으로 브로드캐스트)|
 
-### 구독 토픽
+### 구독 토픽 (Server -> Client)
 
-| 토픽                     | 설명                                | 메시지 타입             |
-|------------------------|-----------------------------------|--------------------|
-| `/topic/room/{roomId}` | 특정 방의 상태 변경 알림 (참가자 변경, 호스트 변경 등) | `RoomInfoResponse` |
-| `/user/queue/errors`   | 사용자별 오류 메시지                       | `ErrorResponse`    |
+| 토픽                          | 설명                               | 메시지 타입             |
+|-----------------------------|----------------------------------|--------------------|
+| `/topic/room/{roomId}`      | 특정 방의 상태 변경 알림 (참가자 변경, 호스트 변경 등) | `RoomInfoResponse` |
+| `/user/queue/errors`        | 사용자별 오류 메시지                      | `ErrorResponse`    |
+| `/topic/game/{gameId}`      | 현재 게임 진행 관련 데이터 반환               | `TurnResponse<T>`               |
+| `/user/topic/game/{gameId}` | 제출자에게만 제출 관련 데이터 반환              | `TurnResponse<DrawerData>`                |
+| `/topic/game/{gameId}/chat` | 현재 게임의 채팅 데이터 반환                 | `TurnResponse<String>`           | 
+| `/topic/game/{gameId}/draw` | 현재 게임의 그리기 데이터 반환                | 구현 중                             | 
+
+### 게임 관련 데이터 반환 정리 `TurnResponse<T>`
+
+현재 게임을 진행하면서 생성되는 데이터는 TurnResponse<T> 형으로 반환됩니다.
+
+```
+public record TurnResponse<T>(TurnResponseType type, T data) {
+}
+```
+
+이는 Type과 Data로 이루어져 있습니다. Type에 따라 분기 처리를 해주시면 될 것 같습니다.
+
+| type  | 반환 데이터       | 구조                                                                                                                                                                                    | 설명                     |
+|-------|--------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------|
+| TURN  | TurnData     | <pre>{<br>"turnId": 1,<br>"drawerId": 42,<br>"startTime": "2025-06-04T14:30:00",<br>"endTime": "2025-06-04T14:32:30"<br>}</pre>                                                       | 현재 턴이 시작될 때 턴 정보 브로드캐스팅 |
+| DRAWER | DrawerData   | <pre>{<br>  "quizWord": "apple",<br>  "turnId": 1<br>}</pre>                                                                                                                          | 턴이 시작될 때, 출제자에게 출제 정보 반환 |
+| CHAT | String       | "홍길동님이 정답을 맞추셨습니다."                                                                                                                                                                   | 참가자가 채팅을 치면 채팅을 브로드캐스팅 | 
+| FINISH | TurnQuitData | <pre>{<br>  "gameId": 1001,<br>  "members": [<br>    { "memberId": 1, "score": 150 },<br>    { "memberId": 2, "score": 120 },<br>    { "memberId": 3, "score": 90 }<br>  ]<br>}</pre> | 턴이 끝났을 때, 현재 회원들의 점수를 담은 TurnQuitData를 브로드캐스팅 | 
+| CORRECT | CorrectData  |  <pre>{<br>  "memberId": 2,<br>  "turnId": 10,<br>  "gameId": 1001<br>}</pre>                                                                                                         | 참가자가 정답을 맞췄을 때, 맞춘 참가자 정보를 브로드캐스팅 | 
+| GAME_FINISH | TurnQuitData | <pre>{<br>  "gameId": 1001,<br>  "members": [<br>    { "memberId": 1, "score": 150 },<br>    { "memberId": 2, "score": 120 },<br>    { "memberId": 3, "score": 90 }<br>  ]<br>}</pre> | 게임이 끝났을 때, 모든 턴을 마친 사용자들의 점수를 담은 TurnQuitData를 브로드캐스팅 |
 
 ### 에러 처리
 
