@@ -34,8 +34,6 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         OAuth2AuthenticationToken oauthToken =
                 (OAuth2AuthenticationToken) authentication;
         String email = oauthToken.getPrincipal().getAttribute("email");
-//        List<String> roles = oauthToken.getAuthorities().stream()
-//                .map(GrantedAuthority::getAuthority).toList();
 
         MemberDTO member = memberService.getMemberByEmail(email);
 
@@ -44,9 +42,6 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         List<String> roles = rolesSet.stream()
                 .map(MemberRole::name)
                 .collect(Collectors.toList());
-
-        // 토큰 발급
-//        tokenService.issueTokens(email, member.getNickname(), String.valueOf(member.getId()), roles, response);
 
         // 3) 토큰 발급: 서비스에서 두 개의 ResponseCookie 반환
         ResponseCookie[] cookies = tokenService.issueTokens(
@@ -60,7 +55,6 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         //    (쿠키 객체 하나씩 toString()으로 헤더 값을 만들어 붙인다)
         response.addHeader(HttpHeaders.SET_COOKIE, cookies[0].toString());
         response.addHeader(HttpHeaders.SET_COOKIE, cookies[1].toString());
-
 
         // 프론트엔드에 리디렉트
         response.sendRedirect("/");

@@ -1,6 +1,5 @@
 package com.itcen.whiteboardserver.member.dto;
 
-import com.fasterxml.jackson.core.JsonToken;
 import com.itcen.whiteboardserver.member.enums.MemberRole;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
@@ -8,7 +7,6 @@ import lombok.*;
 import java.util.Set;
 
 @Getter
-//@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

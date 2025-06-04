@@ -13,7 +13,6 @@ import org.springframework.context.annotation.Configuration;
                 description = "DRAWCEN 프로젝트 API 명세서",
                 version = "v1"
         )
-//        security = {@SecurityRequirement(name = "Bearer Authentication")}
 )
 @Configuration
 public class OpenAPIConfig {
