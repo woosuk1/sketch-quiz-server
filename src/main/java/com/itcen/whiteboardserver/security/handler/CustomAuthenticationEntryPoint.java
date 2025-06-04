@@ -5,7 +5,6 @@ import com.itcen.whiteboardserver.global.exception.GlobalErrorCode;
 import com.itcen.whiteboardserver.global.exception.GlobalExceptionResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;

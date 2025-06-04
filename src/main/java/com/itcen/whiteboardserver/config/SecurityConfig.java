@@ -4,7 +4,6 @@ package com.itcen.whiteboardserver.config;
 import com.itcen.whiteboardserver.auth.service.CustomOAuth2UserService;
 import com.itcen.whiteboardserver.auth.service.CustomOidcUserService;
 import com.itcen.whiteboardserver.auth.service.UserDetailsServiceImpl;
-import com.itcen.whiteboardserver.global.exception.GlobalCommonException;
 import com.itcen.whiteboardserver.global.exception.GlobalErrorCode;
 import com.itcen.whiteboardserver.security.filter.JwtAuthenticationFilter;
 import com.itcen.whiteboardserver.security.filter.RedisRateLimitingFilter;
@@ -26,7 +25,6 @@ import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
-import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandlerImpl;
 import org.springframework.security.web.context.SecurityContextHolderFilter;
@@ -55,8 +53,6 @@ public class SecurityConfig {
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
     private final CustomOidcUserService customOidcUserService;
 
-//    private final ObjectMapper objectMapper;
-
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -73,7 +69,7 @@ public class SecurityConfig {
 //
 //                        // 로그인·회원가입만 제외
 //                        .ignoringRequestMatchers(
-//                                "/auth/login", "/auth/logout"
+//                                "/api/auth/logout", "/api/auth/oauth2/refresh",
 //                        )
 //                )
                 .csrf(AbstractHttpConfigurer::disable)
@@ -99,7 +95,6 @@ public class SecurityConfig {
                                 .oidcUserService(customOidcUserService)
                         )
                         .successHandler(oAuth2LoginSuccessHandler)
-//                        .failureUrl("/auth/login?error")
 
                         .failureHandler((request, response, exception) -> {
                             // 1) 예외 로그 찍기
@@ -109,7 +104,7 @@ public class SecurityConfig {
                                     exception
                             );
                             // 2) 사용자에게는 기존 failureUrl 과 동일하게 redirect
-                            response.sendRedirect("/auth/login?error");
+                            response.sendRedirect("/api/auth/login?error");
                         })
                 )
                 // Disable HTTP session
@@ -129,7 +124,6 @@ public class SecurityConfig {
 
                 /* 설명. 보호된 api 접근 시*/
                 .exceptionHandling(ex -> ex
-//                        .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
                         .authenticationEntryPoint(new CustomAuthenticationEntryPoint(GlobalErrorCode.ACCESS_TOKEN_EXPIRED))
                         .accessDeniedHandler(new AccessDeniedHandlerImpl())
                 );

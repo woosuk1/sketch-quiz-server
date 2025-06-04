@@ -6,20 +6,14 @@ import com.itcen.whiteboardserver.member.enums.MemberRole;
 import com.itcen.whiteboardserver.security.principal.CustomPrincipal;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.util.WebUtils;
 
 import javax.crypto.SecretKey;
 import java.time.Duration;
@@ -99,8 +93,6 @@ public class TokenService {
         }
 
         // 4) 쿠키 세팅
-//        addCookie(response, "access_token",  access,  accessTtl,  "/");
-//        addCookie(response, "refresh_token", refresh, refreshTtl, "/api/auth/oauth2/refresh");
         ResponseCookie accessCookie = addCookie("access_token",  access,  accessTtl,  "/");
         ResponseCookie refreshCookie = addCookie("refresh_token", refresh, refreshTtl, "/api/auth/oauth2/refresh");
 
@@ -156,8 +148,6 @@ public class TokenService {
      */
 //    public void rotateRefresh(HttpServletRequest request, HttpServletResponse response) {
     public ResponseCookie[] rotateRefresh(String old) {
-//        String old = resolveCookie(request);
-//        if (old == null) throw new JwtException("Missing refresh token");
         if (old == null) {
             log.error("Missing refresh token");
             throw new GlobalCommonException(GlobalErrorCode.REFRESH_TOKEN_EXPIRED);
@@ -187,23 +177,14 @@ public class TokenService {
             throw new GlobalCommonException(GlobalErrorCode.INVALID_REFRESH_TOKEN);
         }
 
-        // 2) 덮어쓰기 방식으로 신규 토큰 발급
-//        List<String> roles = SecurityContextHolder.getContext().getAuthentication().getAuthorities()
-//                .stream()
-//                .map(GrantedAuthority::getAuthority)
-//                .collect(Collectors.toList());
-
         // 재사용 issueTokens
-//        issueTokens(username, nickname, id, roles, response);
         return issueTokens(username, nickname, id, roles);
     }
 
     /**
      * Logout: revoke all refresh tokens for current user
      */
-//    public void logout(HttpServletRequest request, HttpServletResponse response, CustomPrincipal principal) {
     public ResponseCookie[] logout(CustomPrincipal principal) {
-//        CustomPrincipal principal = (CustomPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         // 1) Redis에서 refresh 토큰 삭제 시도
         try {
@@ -224,9 +205,6 @@ public class TokenService {
 
         // 3) 삭제용 쿠키 배열 반환
         return new ResponseCookie[]{ deleteAccessCookie, deleteRefreshCookie };
-//        clearCookie(response, "access_token");
-//        clearCookie(response, "refresh_token");
-
     }
 
     // --- internal helpers ---
@@ -246,13 +224,7 @@ public class TokenService {
                 .compact();
     }
 
-//    private String resolveCookie(HttpServletRequest req) {
-//        Cookie c = WebUtils.getCookie(req, "refresh_token");
-//        return c != null ? c.getValue() : null;
-//    }
-
     /** HttpOnly, Secure, SameSite=Lax 쿠키 추가 */
-//    private void addCookie(HttpServletResponse res,
     private ResponseCookie addCookie(String name, String value,
                            Duration ttl, String path) {
         ResponseCookie cookie = ResponseCookie.from(name, value)
@@ -262,11 +234,9 @@ public class TokenService {
                 .path(path)
                 .maxAge(ttl)
                 .build();
-//        res.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
         return cookie;
     }
 
-//    private void clearCookie(HttpServletResponse res, String name) {
     private ResponseCookie clearCookie(String name) {
         ResponseCookie cookie = ResponseCookie.from(name, "")
                 .httpOnly(true)
@@ -275,7 +245,6 @@ public class TokenService {
                 .maxAge(Duration.ZERO)
                 .sameSite("Lax")
                 .build();
-//        res.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
         return cookie;
     }
 }

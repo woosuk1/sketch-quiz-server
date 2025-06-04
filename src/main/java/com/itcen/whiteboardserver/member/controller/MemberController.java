@@ -30,9 +30,7 @@ public class MemberController {
                     현재 로그인한 사용자의 정보를 가져옵니다.
                     """
     )
-//    public ResponseEntity<String> getMember(@AuthenticationPrincipal CustomPrincipal principal) {
     public ResponseEntity<MemberDTO> getMember(@AuthenticationPrincipal CustomPrincipal principal) {
-//        MemberDTO member = memberService.getMemberById(id);
 
         if (principal == null) {
             throw new GlobalCommonException(GlobalErrorCode.MEMBER_NOT_FOUND);

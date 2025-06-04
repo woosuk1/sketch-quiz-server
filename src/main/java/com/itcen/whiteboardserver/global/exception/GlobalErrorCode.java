@@ -58,7 +58,8 @@ public enum GlobalErrorCode {
      */
     INTERNAL_SERVER_ERROR(50000, HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류입니다."),
     DATABASE_CONNECTION_FAILURE(50001, HttpStatus.INTERNAL_SERVER_ERROR, "데이터 베이스 연결 실패입니다."),
-    REDIS_ERROR(50002, HttpStatus.INTERNAL_SERVER_ERROR, "레디스 저장 실패입니다.");
+    REDIS_ERROR(50002, HttpStatus.INTERNAL_SERVER_ERROR, "레디스 저장 실패입니다."),
+    NICKNAME_UPDATE_FAILED(50003, HttpStatus.INTERNAL_SERVER_ERROR, "닉네임 업데이트 실패입니다."),;
 
 
     private final Integer code;
