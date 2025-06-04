@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.http.ResponseCookie;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.simp.stomp.*;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -78,8 +79,8 @@ public class WebSocketRoomJoinTest {
                             Member.builder()
                                     .email(testUserEmail)
                                     .password("<PASSWORD>")
-                                    .name("Test User")
-                                    .memberRole(MemberRole.MEMBER)
+                                    .nickname("Test User")
+                                    .memberRole(Collections.singleton(MemberRole.MEMBER))
                                     .provider(AuthProvider.LOCAL)
                                     .build();
                     // 기타 필요한 설정
@@ -92,24 +93,18 @@ public class WebSocketRoomJoinTest {
 
         // TokenService를 사용하여 토큰 생성
         MockHttpServletResponse mockResponse = new MockHttpServletResponse();
-        List<String> roles = List.of("ROLE_USER");
+        List<String> roles = List.of(MemberRole.MEMBER.name());
 
         // TokenService의 issueTokens 메소드 호출
-        tokenService.issueTokens(testUserEmail, roles, mockResponse);
+        ResponseCookie[] cookies = tokenService.issueTokens(testUserEmail, testUser.getNickname(), String.valueOf(testUser.getId()), roles);
 
-        // 응답 헤더에서 Set-Cookie 값 추출
-        String cookieHeader = mockResponse.getHeader("Set-Cookie");
-        if (cookieHeader != null && cookieHeader.contains("access_token")) {
-            // 쿠키 헤더 파싱하여 토큰 추출
-            String accessToken = cookieHeader.substring(
-                    cookieHeader.indexOf("access_token=") + "access_token=".length(),
-                    cookieHeader.indexOf(";")
-            );
-            headers.add("Cookie", "access_token=" + accessToken);
-            log.info("테스트용 액세스 토큰 설정: {}", accessToken.substring(0, Math.min(10, accessToken.length())) + "...");
-        } else {
-            log.error("토큰 생성 실패: 쿠키 헤더를 찾을 수 없습니다.");
-        }
+        // ResponseCookie에서 Set-Cookie 헤더 문자열로 변환
+        String cookieHeader = cookies[0].toString(); // access_token 쿠키
+
+        // 헤더에 access_token 쿠키 추가
+        headers.add("Cookie", cookieHeader);
+        log.info("테스트용 액세스 토큰 설정: {}", cookieHeader);
+
     }
 
     @Test
