@@ -71,6 +71,13 @@ pipeline {
             }
         }
 
+        stage('Prepare Env') {
+            steps {
+                sh 'cp /home/ubuntu/.env .'
+            }
+        }
+
+        
         stage('Deploy with docker-compose') {
             steps {
                 sshagent(credentials: ['webserver-ssh-key']) {
