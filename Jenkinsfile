@@ -20,6 +20,12 @@ pipeline {
 
         // Deployment target
         SERVER_IP = "${SERVER_IP}"
+
+        // App environment variables (Jenkins에 등록한 변수들)
+        DB_HOST = "${DB_HOST}"
+        DB_USER = "${DB_USER}"
+        DB_PASS = "${DB_PASS}"
+        # 필요한 환경변수 추가
     }
 
     stages {
@@ -76,12 +82,11 @@ pipeline {
                 sshagent(credentials: ['webserver-ssh-key']) {
                     sh """
                         ssh -o StrictHostKeyChecking=no ubuntu@${SERVER_IP} 'mkdir -p ~/server-app'
-                        scp -o StrictHostKeyChecking=no .env ubuntu@${SERVER_IP}:~/server-app/
                         scp -o StrictHostKeyChecking=no docker-compose.yml ubuntu@${SERVER_IP}:~/server-app/
                         ssh -o StrictHostKeyChecking=no ubuntu@${SERVER_IP} '
                             cd ~/server-app
                             docker-compose down || true
-                            IMAGE_TAG=$IMAGE_TAG docker-compose up -d --build
+                            IMAGE_TAG=$IMAGE_TAG DB_HOST=$DB_HOST DB_USER=$DB_USER DB_PASS=$DB_PASS docker-compose up -d --build
                         '
                     """
                 }
@@ -104,4 +109,3 @@ pipeline {
         }
     }
 }
-
