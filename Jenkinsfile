@@ -25,7 +25,7 @@ pipeline {
         DB_HOST = "${DB_HOST}"
         DB_USER = "${DB_USER}"
         DB_PASS = "${DB_PASS}"
-        # 필요한 환경변수 추가
+    
     }
 
     stages {
