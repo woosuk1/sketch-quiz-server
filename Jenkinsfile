@@ -15,16 +15,11 @@ pipeline {
         // AWS ECR
         AWS_ECR_CREDENTIAL_ID = 'AWS_ECR_CREDENTIAL'
         AWS_REGION = 'ap-northeast-2'
-        ECR_REGISTRY = '010686621060.dkr.ecr.ap-northeast-2.amazonaws.com'
-        ECR_REPOSITORY = "${ECR_REGISTRY}/2team/back-ecr"
+        ECR_REPOSITORY = '010686621060.dkr.ecr.ap-northeast-2.amazonaws.com/2team/back-ecr'
         IMAGE_TAG = "${BUILD_NUMBER}"
 
         // Deployment target
         SERVER_IP = "${SERVER_IP}"
-
-        // Mongo environment variables (필요 시 추가)
-        MONGO_INITDB_ROOT_USERNAME = credentials('mongo-root-username')
-        MONGO_INITDB_ROOT_PASSWORD = credentials('mongo-root-password')
     }
 
     stages {
@@ -55,7 +50,7 @@ pipeline {
                         def status = sh(
                             script: '''
                                 set -eux
-                                aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
+                                aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPOSITORY
                             ''',
                             returnStatus: true
                         )
@@ -81,14 +76,13 @@ pipeline {
                 sshagent(credentials: ['webserver-ssh-key']) {
                     sh """
                     ssh -o StrictHostKeyChecking=no ubuntu@${SERVER_IP} 'mkdir -p ~/server-app'
+                    scp -o StrictHostKeyChecking=no .env ubuntu@${SERVER_IP}:~/server-app/
                     scp -o StrictHostKeyChecking=no docker-compose.yml ubuntu@${SERVER_IP}:~/server-app/
-                    ssh -o StrictHostKeyChecking=no ubuntu@${SERVER_IP} "
-                        export MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME} &&
-                        export MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD} &&
-                        cd ~/server-app &&
-                        docker-compose down || true &&
-                        IMAGE_TAG=${IMAGE_TAG} docker-compose up -d --build
-                    "
+                    ssh -o StrictHostKeyChecking=no ubuntu@${SERVER_IP} '
+                        cd ~/server-app
+                        docker-compose down || true
+                        IMAGE_TAG=$IMAGE_TAG docker-compose up -d --build
+                    '
                     """
                 }
             }
