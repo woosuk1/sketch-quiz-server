@@ -73,11 +73,7 @@ pipeline {
 
         stage('Prepare Env') {
             steps {
-                sshagent(credentials: ['webserver-ssh-key']) {
-                    sh """
-                        scp -o StrictHostKeyChecking=no ubuntu@${SERVER_IP}:/home/ubuntu/.env .
-                    """
-                }
+                sh 'cp /var/lib/jenkins/secrets/.env .'
             }
         }
 
@@ -114,3 +110,4 @@ pipeline {
         }
     }
 }
+
