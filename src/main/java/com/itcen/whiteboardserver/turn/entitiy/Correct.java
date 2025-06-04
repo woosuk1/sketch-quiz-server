@@ -1,8 +1,10 @@
-package com.itcen.whiteboardserver.game.entity;
+package com.itcen.whiteboardserver.turn.entitiy;
 
 import com.itcen.whiteboardserver.member.entity.Member;
+import com.itcen.whiteboardserver.turn.entitiy.Turn;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
@@ -16,6 +18,7 @@ import java.time.LocalDateTime;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Correct {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

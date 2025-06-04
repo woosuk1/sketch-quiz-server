@@ -3,7 +3,7 @@ package com.itcen.whiteboardserver.game.service;
 import com.itcen.whiteboardserver.game.constant.GameConstants;
 import com.itcen.whiteboardserver.game.dto.request.RoomInfoRequest;
 import com.itcen.whiteboardserver.game.dto.request.RoomJoinRequest;
-import com.itcen.whiteboardserver.game.dto.response.ParticipantResponse;
+import com.itcen.whiteboardserver.game.dto.response.RoomParticipantResponse;
 import com.itcen.whiteboardserver.game.dto.response.RoomInfoResponse;
 import com.itcen.whiteboardserver.game.dto.response.RoomResponse;
 import com.itcen.whiteboardserver.game.entity.Room;
@@ -84,11 +84,11 @@ public class RoomService {
         List<RoomParticipation> roomParticipationList = participationRepository.findByRoomId(request.getRoomCode());
         log.debug("방 참여자 조회 완료: roomId={}, 참여자 수={}", room.getId(), roomParticipationList.size());
 
-        List<ParticipantResponse> participantList = roomParticipationList.stream()
+        List<RoomParticipantResponse> participantList = roomParticipationList.stream()
                 .map(roomParticipation -> {
                     Member member = roomParticipation.getMember();
                     boolean isHost = Objects.equals(member.getId(), room.getHost().getId());
-                    return new ParticipantResponse(member.getId(), member.getNickname(), isHost);
+                    return new RoomParticipantResponse(member.getId(), member.getName(), isHost);
                 })
                 .toList();
 

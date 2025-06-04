@@ -1,7 +1,7 @@
 package com.itcen.whiteboardserver.game.event;
 
 import com.itcen.whiteboardserver.game.dto.request.RoomInfoRequest;
-import com.itcen.whiteboardserver.game.dto.response.ParticipantResponse;
+import com.itcen.whiteboardserver.game.dto.response.RoomParticipantResponse;
 import com.itcen.whiteboardserver.game.dto.response.RoomInfoResponse;
 import com.itcen.whiteboardserver.game.service.RoomService;
 import lombok.RequiredArgsConstructor;
@@ -81,8 +81,8 @@ public class WebSocketEventListener {
         RoomInfoResponse roomInfoResponse = roomService.getRoomInfoByRoomCode(new RoomInfoRequest(roomId));
 
         // 호스트 찾기
-        ParticipantResponse hostParticipant = roomInfoResponse.getParticipantList().stream()
-                .filter(ParticipantResponse::isHost)
+        RoomParticipantResponse hostParticipant = roomInfoResponse.getParticipantList().stream()
+                .filter(RoomParticipantResponse::isHost)
                 .findFirst()
                 .orElse(null);
 
