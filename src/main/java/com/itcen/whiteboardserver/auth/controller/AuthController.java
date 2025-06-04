@@ -132,6 +132,7 @@ public class AuthController {
                 "id", principal.getId()
         );
     }
+
     @GetMapping("/protected")
     public String secret() {
         return "비밀 데이터";

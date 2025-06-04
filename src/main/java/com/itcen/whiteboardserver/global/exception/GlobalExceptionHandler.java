@@ -72,12 +72,6 @@ public class GlobalExceptionHandler {
         return createErrorResponse(GlobalErrorCode.VALIDATION_FAIL, e, request);
     }
 
-//    @ExceptionHandler(JwtException.class)
-//    public ResponseEntity<GlobalExceptionResponse> handleJwtException(JwtException e, HttpServletRequest request) {
-//        log.error("유효하지 않은 JWT 토큰: {}", e.getMessage(), e);
-//        return createErrorResponse(GlobalErrorCode.INVALID_TOKEN_ERROR, e, request);
-//    }
-
     private ResponseEntity<GlobalExceptionResponse> createErrorResponse(GlobalErrorCode errorCode, Exception e, HttpServletRequest request) {
         GlobalExceptionResponse response = GlobalExceptionResponse.of(errorCode);
         return ResponseEntity.status(response.getHttpStatus()).body(response);

@@ -1,5 +1,7 @@
 package com.itcen.whiteboardserver.member.controller;
 
+import com.itcen.whiteboardserver.global.exception.GlobalCommonException;
+import com.itcen.whiteboardserver.global.exception.GlobalErrorCode;
 import com.itcen.whiteboardserver.security.principal.CustomPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import com.itcen.whiteboardserver.member.dto.MemberDTO;

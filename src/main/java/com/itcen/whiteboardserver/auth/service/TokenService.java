@@ -152,7 +152,10 @@ public class TokenService {
     public ResponseCookie[] rotateRefresh(String old) {
 //        String old = resolveCookie(request);
 //        if (old == null) throw new JwtException("Missing refresh token");
-        if (old == null) throw new GlobalCommonException(GlobalErrorCode.REFRESH_TOKEN_EXPIRED);
+        if (old == null) {
+            log.error("Missing refresh token");
+            throw new GlobalCommonException(GlobalErrorCode.REFRESH_TOKEN_EXPIRED);
+        }
 
         Jws<Claims> claims;
 
