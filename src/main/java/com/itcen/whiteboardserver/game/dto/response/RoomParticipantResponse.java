@@ -9,7 +9,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ParticipantResponse {
+public class RoomParticipantResponse {
     private Long memberId;
     private String memberName;
     private boolean isHost;

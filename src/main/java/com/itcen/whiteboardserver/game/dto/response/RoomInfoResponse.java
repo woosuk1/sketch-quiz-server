@@ -12,6 +12,6 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RoomInfoResponse {
-    private List<ParticipantResponse> participantList;
+    private List<RoomParticipantResponse> participantList;
     private Long roomCode;
 }
