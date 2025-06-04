@@ -13,10 +13,10 @@ pipeline {
         GIT_CREDENTIALS_ID = 'jenkins-credential'
 
         // AWS ECR
-        AWS_ECR_CREDENTIAL_ID = 'AWS_ECR_CREDENTIAL'  // 반드시 'AWS Credentials' 타입으로 Jenkins에 등록돼 있어야 함
+        AWS_ECR_CREDENTIAL_ID = 'AWS_ECR_CREDENTIAL'
         AWS_REGION = 'ap-northeast-2'
-        ECR_REGISTRY = '010686621060.dkr.ecr.ap-northeast-2.amazonaws.com'
-        ECR_REPOSITORY = "${ECR_REGISTRY}/2team/back-ecr"
+        AWS_ECR_URI = '010686621060.dkr.ecr.ap-northeast-2.amazonaws.com/2team/back-ecr'
+        ECR_REPOSITORY = "${AWS_ECR_URI}/2team/back-ecr"
         IMAGE_TAG = "${BUILD_NUMBER}"
 
         // Deployment target
@@ -40,10 +40,19 @@ pipeline {
 
         stage('Login to ECR') {
             steps {
-                withAWS(credentials: "${AWS_ECR_CREDENTIAL_ID}", region: "${AWS_REGION}") {
-                    sh '''
-                        aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
-                    '''
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: AWS_ECR_CREDENTIAL_ID]]) {
+                    script {
+                        def status = sh(
+                            script: '''
+                                set -eux
+                                aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ECR_URI
+                            ''',
+                            returnStatus: true
+                        )
+                        if (status != 0) {
+                            error "ECR 로그인 실패, 상태 코드: ${status}"
+                        }
+                    }
                 }
             }
         }
@@ -70,6 +79,15 @@ pipeline {
                     """
                 }
             }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline succeeded'
+        }
+        failure {
+            echo 'Pipeline failed'
         }
     }
 }
