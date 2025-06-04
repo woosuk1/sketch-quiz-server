@@ -71,12 +71,6 @@ pipeline {
             }
         }
 
-        stage('Prepare Env') {
-            steps {
-                sh 'cp /var/lib/jenkins/secrets/.env .'
-            }
-        }
-
         stage('Deploy with docker-compose') {
             steps {
                 sshagent(credentials: ['webserver-ssh-key']) {
