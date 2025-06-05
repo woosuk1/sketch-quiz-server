@@ -11,4 +11,3 @@ COPY ${JAR_FILE} app.jar
 # 4. MongoDB URI를 환경변수로 받아 실행
 ENTRYPOINT ["sh", "-c", "java -Dspring.data.mongodb.uri=$MONGODB_URI -jar /app.jar"]
 
-##
