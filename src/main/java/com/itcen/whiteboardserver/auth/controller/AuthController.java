@@ -29,7 +29,7 @@ public class AuthController {
      */
     @PostMapping("/oauth2/refresh")
     public ResponseEntity<Void> refresh(
-            @Parameter(hidden = true) @CookieValue(name = "refresh_token", required = false) String refreshToken
+            @Parameter(hidden = true) @CookieValue(name = "refresh_token") String refreshToken
     ) {
         ResponseCookie[] cookies =tokenService.rotateRefresh(refreshToken);
         return ResponseEntity.ok()
