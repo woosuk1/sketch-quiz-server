@@ -45,6 +45,7 @@ public class TurnServiceImpl implements TurnService {
     final int TURN_SECONDS = 150;
     final PlatformTransactionManager transactionManager;
     final ApplicationContext applicationContext;
+    final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
     @Override
     public void startTurn(Long gameId) {
@@ -72,7 +73,6 @@ public class TurnServiceImpl implements TurnService {
     }
 
     private void scheduleTurnOver(Long turnId) {
-        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
         scheduler.schedule(() -> {
             TransactionTemplate txTemplate = new TransactionTemplate(transactionManager);
             txTemplate.execute(status -> {
