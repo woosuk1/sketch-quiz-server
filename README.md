@@ -59,6 +59,8 @@ MONGODB_URI=localhost:27017/whiteboard?authSource=admin
 CORS_ALLOWED_ORIGINS=http://localhost:*
 # Redis 서버 호스트 주소
 REDIS_HOST=localhost
+DEV_REDIS_HOST=localhost
+PROD_REDIS_HOST=
 # Redis 서버 포트 (기본값: 6379)
 REDIS_PORT=6379
 # Google OAuth 클라이언트 ID
