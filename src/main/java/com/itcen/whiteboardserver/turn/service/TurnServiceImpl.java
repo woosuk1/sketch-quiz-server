@@ -42,9 +42,10 @@ public class TurnServiceImpl implements TurnService {
     final TurnRepository turnRepository;
     final CorrectRepository correctRepository;
     final GameParticipationRepository gameParticipationRepository;
-    final int TURN_SECONDS = 150;
+    final int TURN_SECONDS = 10;
     final PlatformTransactionManager transactionManager;
     final ApplicationContext applicationContext;
+    final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(5);
 
     @Override
     public void startTurn(Long gameId) {
@@ -72,7 +73,6 @@ public class TurnServiceImpl implements TurnService {
     }
 
     private void scheduleTurnOver(Long turnId) {
-        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
         scheduler.schedule(() -> {
             TransactionTemplate txTemplate = new TransactionTemplate(transactionManager);
             txTemplate.execute(status -> {
@@ -118,7 +118,6 @@ public class TurnServiceImpl implements TurnService {
         );
     }
 
-    @Transactional
     private void quitGame(Long gameId) {
         broadcastTurnScore(gameId, TurnResponseType.GAME_FINISH);
 
@@ -170,8 +169,7 @@ public class TurnServiceImpl implements TurnService {
         return true;
     }
 
-    @Transactional
-    private void doTurnOver(Long gameId) {
+    private synchronized void doTurnOver(Long gameId) {
         Game game = getGameByGameId(gameId);
         Turn turn = game.getCurrentTurn();
 
@@ -189,7 +187,6 @@ public class TurnServiceImpl implements TurnService {
         applicationContext.getBean(TurnService.class).startTurn(gameId);
     }
 
-    @Transactional
     private void finalizeTurnScore(Long gameId) {
         Game game = getGameByGameId(gameId);
         Turn turn = game.getCurrentTurn();
@@ -224,7 +221,6 @@ public class TurnServiceImpl implements TurnService {
         broadcastTurnScore(gameId, TurnResponseType.FINISH);
     }
 
-    @Transactional
     private void broadcastTurnScore(Long gameId, TurnResponseType type) {
         Game game = getGameByGameId(gameId);
 
