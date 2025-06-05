@@ -7,6 +7,7 @@ import com.itcen.whiteboardserver.member.service.MemberService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
@@ -25,6 +26,9 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
     private final TokenService tokenService;
     private final MemberService memberService;
+
+    @Value("${FRONTEND_REDIRECT_URL}")
+    private String frontendRedirectUrl;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
@@ -57,6 +61,6 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         response.addHeader(HttpHeaders.SET_COOKIE, cookies[1].toString());
 
         // 프론트엔드에 리디렉트
-        response.sendRedirect("/");
+        response.sendRedirect(frontendRedirectUrl);
     }
 }
