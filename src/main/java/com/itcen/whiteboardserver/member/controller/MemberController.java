@@ -3,6 +3,7 @@ package com.itcen.whiteboardserver.member.controller;
 import com.itcen.whiteboardserver.global.exception.GlobalCommonException;
 import com.itcen.whiteboardserver.global.exception.GlobalErrorCode;
 import com.itcen.whiteboardserver.member.dto.MemberResponseDTO;
+import com.itcen.whiteboardserver.member.dto.NicknameDTO;
 import com.itcen.whiteboardserver.security.principal.CustomPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import com.itcen.whiteboardserver.member.dto.MemberDTO;
@@ -47,18 +48,36 @@ public class MemberController {
                 .body(member);
     }
 
-    @GetMapping("/nickname")
+    @PatchMapping("/nickname")
     @Operation(
             summary = "닉네임 재설정",
             description =
                     """
-                    현재 로그인한 사용자의 닉네임을 랜덤으로 재설정합니다.
+                    현재 로그인한 사용자가 선택한 닉네임으로 변경합니다.
                     """
     )
-    public ResponseEntity<MemberResponseDTO> postChangeNickname(@AuthenticationPrincipal CustomPrincipal principal) {
-        MemberResponseDTO member = memberService.postChangeNickname(principal);
+    public ResponseEntity<MemberResponseDTO> patchChangeNickname(
+            @RequestBody NicknameDTO nicknameDTO,
+            @AuthenticationPrincipal CustomPrincipal principal) {
+
+        MemberResponseDTO member = memberService.patchNickname(principal, nicknameDTO);
 
         return ResponseEntity.ok()
                 .body(member);
+    }
+
+    @GetMapping("/nickname")
+    @Operation(
+            summary = "랜덤닉네임 단건 조회",
+            description =
+                    """
+                    랜덤 닉네임을 단건 조회합니다.
+                    """
+    )
+    public ResponseEntity<NicknameDTO> getRandomNickname() {
+        NicknameDTO nicknameDTO = memberService.getRandomNickname();
+
+        return ResponseEntity.ok()
+                .body(nicknameDTO);
     }
 }

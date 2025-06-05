@@ -7,9 +7,11 @@ import com.itcen.whiteboardserver.security.principal.CustomPrincipal;
 
 public interface MemberService {
 
-    NicknameDTO getRandomNickname();
-
-    MemberResponseDTO postChangeNickname(CustomPrincipal principal);
+    NicknameDTO postRandomNickname();
 
     MemberDTO getMemberByEmail(String email);
+
+    NicknameDTO getRandomNickname();
+
+    MemberResponseDTO patchNickname(CustomPrincipal principal, NicknameDTO nicknameDTO);
 }
