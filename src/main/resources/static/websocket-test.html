@@ -279,7 +279,7 @@
             addLogEntry('채팅 메시지를 입력하거나 게임이 시작되어야 합니다.', 'error');
             return;
         }
-        stompClient.send(`/app/game/${currentGameId}/chat`, {}, message);
+        stompClient.send(`/app/game/${currentGameId}/chat`, { 'content-type': 'application/json' }, JSON.stringify(message));
         addLogEntry('채팅 전송: ' + message, 'sent');
         document.getElementById('chatInput').value = '';
     });
