@@ -4,4 +4,5 @@ spring:
     data:
         redis:
             host: ${DEV_REDIS_HOST}
-
+server:
+    port: ${DEV_SERVER_PORT}

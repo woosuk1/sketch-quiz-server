@@ -6,3 +6,5 @@ spring:
   data:
     redis:
       host: ${PROD_REDIS_HOST}
+server:
+  port: ${PROD_SERVER_PORT}
