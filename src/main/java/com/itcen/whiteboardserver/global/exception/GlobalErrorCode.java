@@ -51,6 +51,7 @@ public enum GlobalErrorCode {
      */
     ENDPOINT_NOT_FOUND(40400, HttpStatus.NOT_FOUND, "존재하지 않는 엔드포인트입니다."),
     MEMBER_NOT_FOUND(40401, HttpStatus.NOT_FOUND, "존재하지 않는 회원입니다."),
+    NICKNAME_NOT_FOUND(40402, HttpStatus.NOT_FOUND, "존재하지 않는 닉네임입니다."),
 
     /**
      * 500(Internal Server Error)

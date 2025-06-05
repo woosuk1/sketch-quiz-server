@@ -23,14 +23,33 @@ public class MemberServiceImpl implements MemberService {
     private final NicknamesRepository nicknamesRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public MemberDTO getMemberByEmail(String email) {
         return memberRepository.findByEmail(email)
                 .map(member -> new MemberDTO(member.getId(), member.getNickname(), member.getEmail(), member.getMemberRole()))
                 .orElseThrow(() -> new GlobalCommonException(GlobalErrorCode.MEMBER_NOT_FOUND));
     }
 
-
+    @Override
+    @Transactional(readOnly = true)
     public NicknameDTO getRandomNickname() {
+
+        NicknameDTO randomNickname = nicknamesRepository.findRandomNickname();
+
+        if(randomNickname == null) {
+            throw new GlobalCommonException(GlobalErrorCode.NICKNAME_NOT_FOUND);
+        }
+
+        return randomNickname;
+    }
+
+
+    /* 설명.
+     *  초기 사용자를 위한 랜덤 닉네임 설정
+    * */
+    @Override
+    @Transactional
+    public NicknameDTO postRandomNickname() {
 
         /* 설명. 닉네임 repo에서 닉네임 가져오기
          *  1. is_used가 false인 닉네임을 가져온다.
@@ -41,22 +60,22 @@ public class MemberServiceImpl implements MemberService {
 
         nicknamesRepository.updateIsUsed(randomNickname.getId(), true);
 
-//        return nicknamesRepository.findRandomNickname();
         return randomNickname;
     }
 
+    /* 설명.
+     *  선택한 닉네임으로 바꾸기
+    * */
     @Override
     @Transactional
-    public MemberResponseDTO postChangeNickname(CustomPrincipal principal) {
+    public MemberResponseDTO patchNickname(CustomPrincipal principal, NicknameDTO nicknameDTO) {
 
         /* 설명. 닉네임 repo에서 닉네임 가져오기
-         *  1. is_used가 false인 닉네임을 가져온다.
          *  2. 가져온 닉네임을 사용자의 닉네임으로 설정한다.
          *  3. 사용한 닉네임은 is_used를 true로 변경한다.
          *  4. 기존 닉네임은 is_used를 false로 변경한다.
         * */
 
-        NicknameDTO nicknameDTO = getRandomNickname();
         MemberResponseDTO memberDTO = null;
 
         if (nicknameDTO != null) {
