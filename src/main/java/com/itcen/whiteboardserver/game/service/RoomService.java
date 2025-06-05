@@ -3,9 +3,8 @@ package com.itcen.whiteboardserver.game.service;
 import com.itcen.whiteboardserver.game.constant.GameConstants;
 import com.itcen.whiteboardserver.game.dto.request.RoomInfoRequest;
 import com.itcen.whiteboardserver.game.dto.request.RoomJoinRequest;
-import com.itcen.whiteboardserver.game.dto.response.RoomParticipantResponse;
 import com.itcen.whiteboardserver.game.dto.response.RoomInfoResponse;
-import com.itcen.whiteboardserver.game.dto.response.RoomResponse;
+import com.itcen.whiteboardserver.game.dto.response.RoomParticipantResponse;
 import com.itcen.whiteboardserver.game.entity.Room;
 import com.itcen.whiteboardserver.game.entity.RoomParticipation;
 import com.itcen.whiteboardserver.game.event.RoomHostChangedEvent;
@@ -41,7 +40,7 @@ public class RoomService {
      * 방 생성
      */
     @Transactional
-    public RoomResponse createRoom(String memberEmail) {
+    public RoomInfoResponse createRoom(String memberEmail) {
         log.info("방 생성 요청: memberEmail={}", memberEmail);
         Member host = memberRepository.findByEmail(memberEmail)
                 .orElseThrow(() -> new MemberNotFoundException("사용자를 찾을 수 없습니다."));
@@ -66,7 +65,8 @@ public class RoomService {
 
         // 방 코드 반환
         log.info("방 생성 성공: roomId={}, hostId={}", savedRoom.getId(), host.getId());
-        return new RoomResponse(room.getId());
+        RoomParticipantResponse participantList = new RoomParticipantResponse(host.getId(), host.getNickname(), true);
+        return new RoomInfoResponse(List.of(participantList), room.getId());
     }
 
     /**
