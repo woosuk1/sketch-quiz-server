@@ -3,6 +3,7 @@ package com.itcen.whiteboardserver.member.service;
 import com.itcen.whiteboardserver.global.exception.GlobalCommonException;
 import com.itcen.whiteboardserver.global.exception.GlobalErrorCode;
 import com.itcen.whiteboardserver.member.dto.MemberDTO;
+import com.itcen.whiteboardserver.member.dto.MemberResponseDTO;
 import com.itcen.whiteboardserver.member.dto.NicknameDTO;
 import com.itcen.whiteboardserver.member.entity.Member;
 import com.itcen.whiteboardserver.member.repository.MemberRepository;
@@ -24,7 +25,7 @@ public class MemberServiceImpl implements MemberService {
     @Override
     public MemberDTO getMemberByEmail(String email) {
         return memberRepository.findByEmail(email)
-                .map(member -> new MemberDTO(member.getId(), member.getNickname(), member.getEmail() , member.getMemberRole()))
+                .map(member -> new MemberDTO(member.getId(), member.getNickname(), member.getEmail(), member.getMemberRole()))
                 .orElseThrow(() -> new GlobalCommonException(GlobalErrorCode.MEMBER_NOT_FOUND));
     }
 
@@ -46,7 +47,7 @@ public class MemberServiceImpl implements MemberService {
 
     @Override
     @Transactional
-    public MemberDTO postChangeNickname(CustomPrincipal principal) {
+    public MemberResponseDTO postChangeNickname(CustomPrincipal principal) {
 
         /* 설명. 닉네임 repo에서 닉네임 가져오기
          *  1. is_used가 false인 닉네임을 가져온다.
@@ -56,7 +57,7 @@ public class MemberServiceImpl implements MemberService {
         * */
 
         NicknameDTO nicknameDTO = getRandomNickname();
-        MemberDTO memberDTO = null;
+        MemberResponseDTO memberDTO = null;
 
         if (nicknameDTO != null) {
             Long memberId = principal.getId();
@@ -71,11 +72,10 @@ public class MemberServiceImpl implements MemberService {
                 // 기존 닉네임은 is_used를 false로 변경
                 nicknamesRepository.updateIsUsedByNickname(principal.getNickname());
 
-                memberDTO = new MemberDTO(
+                memberDTO = new MemberResponseDTO(
                         memberId,
                         nicknameDTO.getNickname(),
-                        principal.getEmail(),
-                        null
+                        principal.getEmail()
                 );
 
             } catch (Exception e) {

@@ -32,7 +32,7 @@ public enum GlobalErrorCode {
     ACCESS_TOKEN_EXPIRED(40101, HttpStatus.UNAUTHORIZED, "액세스 토큰이 만료되었습니다."),
     INVALID_REFRESH_TOKEN(40102, HttpStatus.UNAUTHORIZED, "유효하지 않은 리프레시 토큰입니다."),
     REFRESH_TOKEN_EXPIRED(40103, HttpStatus.UNAUTHORIZED, "리프레시 토큰이 만료되었습니다."),
-
+    OAUTH_UNAUTHORIZED(40104, HttpStatus.UNAUTHORIZED, "OAuth 인증 실패입니다."),
 
     /**
      * 403(Forbidden)

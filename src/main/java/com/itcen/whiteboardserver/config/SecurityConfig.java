@@ -1,20 +1,24 @@
 package com.itcen.whiteboardserver.config;
 
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.itcen.whiteboardserver.auth.service.CustomOAuth2UserService;
 import com.itcen.whiteboardserver.auth.service.CustomOidcUserService;
 import com.itcen.whiteboardserver.auth.service.UserDetailsServiceImpl;
 import com.itcen.whiteboardserver.global.exception.GlobalErrorCode;
+import com.itcen.whiteboardserver.global.exception.GlobalExceptionResponse;
 import com.itcen.whiteboardserver.security.filter.JwtAuthenticationFilter;
 import com.itcen.whiteboardserver.security.filter.RedisRateLimitingFilter;
 import com.itcen.whiteboardserver.security.filter.RequestResponseLoggingFilter;
 import com.itcen.whiteboardserver.security.handler.CookieAuthorizationRequestRepository;
 import com.itcen.whiteboardserver.security.handler.CustomAuthenticationEntryPoint;
 import com.itcen.whiteboardserver.security.handler.OAuth2LoginSuccessHandler;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -30,6 +34,8 @@ import org.springframework.security.web.access.AccessDeniedHandlerImpl;
 import org.springframework.security.web.context.SecurityContextHolderFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
+
+import java.io.IOException;
 
 /**
  * Spring Security 6.x configuration applying best practices:
@@ -52,6 +58,7 @@ public class SecurityConfig {
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
     private final CustomOidcUserService customOidcUserService;
+    private final ObjectMapper objectMapper;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -103,8 +110,8 @@ public class SecurityConfig {
                                     request.getRequestURI(),
                                     exception
                             );
-                            // 2) 사용자에게는 기존 failureUrl 과 동일하게 redirect
-                            response.sendRedirect("/api/auth/login?error");
+
+                            sendErrorResponse(response, GlobalErrorCode.OAUTH_UNAUTHORIZED);
                         })
                 )
                 // Disable HTTP session
@@ -174,6 +181,16 @@ public class SecurityConfig {
     @Bean
     public AuthorizationRequestRepository<OAuth2AuthorizationRequest> authorizationRequestRepository(){
         return new CookieAuthorizationRequestRepository();
+    }
+
+    private void sendErrorResponse(HttpServletResponse response, GlobalErrorCode errorCode) throws IOException {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding("UTF-8");
+        // JSON 직렬화: { "code": 40101, "message": "Access Token Expired" }
+        GlobalExceptionResponse globalExceptionResponse = GlobalExceptionResponse.of(errorCode);
+        String json = objectMapper.writeValueAsString(globalExceptionResponse);
+        response.getWriter().write(json);
     }
 
 }
