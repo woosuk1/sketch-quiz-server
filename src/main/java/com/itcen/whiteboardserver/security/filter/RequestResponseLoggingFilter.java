@@ -40,14 +40,14 @@ public class RequestResponseLoggingFilter extends OncePerRequestFilter {
                 .map(name -> name + ": " + wrappedReq.getHeader(name))
                 .collect(Collectors.joining(", "))
             : "";
-//        log.debug("[REQUEST] {} {} headers=[{}] body=[{}]",
-//                wrappedReq.getMethod(), wrappedReq.getRequestURI(),
-//                reqHeaders, reqBody);
+        log.debug("[REQUEST] {} {} headers=[{}] body=[{}]",
+                wrappedReq.getMethod(), wrappedReq.getRequestURI(),
+                reqHeaders, reqBody);
 
         // 응답 로그
         String resBody = new String(wrappedRes.getContentAsByteArray(), StandardCharsets.UTF_8);
-//        log.debug("[RESPONSE] status={} duration={}ms body=[{}]",
-//                wrappedRes.getStatus(), duration, resBody);
+        log.debug("[RESPONSE] status={} duration={}ms body=[{}]",
+                wrappedRes.getStatus(), duration, resBody);
 
         // 복원해서 실제 전송
         wrappedRes.copyBodyToResponse();

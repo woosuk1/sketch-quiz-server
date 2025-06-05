@@ -1,6 +1,5 @@
 package com.itcen.whiteboardserver.config;
 
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.itcen.whiteboardserver.auth.service.CustomOAuth2UserService;
 import com.itcen.whiteboardserver.auth.service.CustomOidcUserService;
@@ -35,7 +34,6 @@ import org.springframework.security.web.access.AccessDeniedHandlerImpl;
 import org.springframework.security.web.context.SecurityContextHolderFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
-import org.springframework.web.cors.CorsConfigurationSource;
 
 import java.io.IOException;
 
@@ -51,8 +49,8 @@ import java.io.IOException;
 @EnableWebSecurity
 @Slf4j
 @RequiredArgsConstructor
-@Profile("dev")
-public class SecurityConfig {
+@Profile("prod")
+public class ProdSecurityConfig {
 
     private final UserDetailsServiceImpl userDetailsService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -62,60 +60,73 @@ public class SecurityConfig {
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
     private final CustomOidcUserService customOidcUserService;
     private final ObjectMapper objectMapper;
-    private final CorsConfigurationSource corsConfigurationSource;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // CORS 설정을 dsl로 연결
-                .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 // 가장 먼저 만날 필터(로깅 설정)
                 .addFilterBefore(requestResponseLoggingFilter,
                         SecurityContextHolderFilter.class)
                 // Rate limiting filter 를 먼저 chaining 하는 것은 비인증 사용자만 하면 된다
                 .addFilterAfter(redisRateLimitingFilter, RequestResponseLoggingFilter.class)
+                // CSRF config: HttpOnly cookie, SameSite=Lax, header X-XSRF-TOKEN
+
+//                .csrf(csrf -> csrf
+//                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+//                        .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler())
+//
+//                        // 로그인·회원가입만 제외
+//                        .ignoringRequestMatchers(
+//                                "/api/auth/logout", "/api/auth/oauth2/refresh",
+//                        )
+//                )
                 .csrf(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
-//                // JWT auth filter -> 인증 필터보다 먼저 토큰 추출 및 검증을 하여 SecurityContext 설정
+                // JWT auth filter -> 인증 필터보다 먼저 토큰 추출 및 검증을 하여 SecurityContext 설정
                 .addFilterAfter(jwtAuthenticationFilter, SecurityContextHolderFilter.class)
 
                 // OAuth2 Login
                 .oauth2Login(oauth2 -> oauth2
 //                        .loginPage("/auth/login")
-                        .authorizationEndpoint(a -> a
-                                .baseUri("/oauth2/authorization")
-                                // 쿠키 저장소: OAuth2 인가 요청(state) 보관
-                                .authorizationRequestRepository(authorizationRequestRepository()
-                            )
-                        )
-                        .redirectionEndpoint(r ->
-                                r.baseUri("/login/oauth2/code/*"))
-                        .userInfoEndpoint(u ->
-                                u.userService(customOAuth2UserService)
-                        // OIDC (openid) 용
-                                .oidcUserService(customOidcUserService)
-                        )
-                        .successHandler(oAuth2LoginSuccessHandler)
+                                .authorizationEndpoint(a -> a
+                                        .baseUri("/oauth2/authorization")
+                                        // 쿠키 저장소: OAuth2 인가 요청(state) 보관
+                                        .authorizationRequestRepository(authorizationRequestRepository()
+                                        )
+                                )
+                                .redirectionEndpoint(r ->
+                                        r.baseUri("/login/oauth2/code/*"))
+                                .userInfoEndpoint(u ->
+                                        u.userService(customOAuth2UserService)
+                                                // OIDC (openid) 용
+                                                .oidcUserService(customOidcUserService)
+                                )
+                                .successHandler(oAuth2LoginSuccessHandler)
 
-                        .failureHandler((request, response, exception) -> {
-                            // 1) 예외 로그 찍기
-                            log.error("OAuth2 로그인 실패: registrationId={}, uri={}",
-                                    request.getParameter("registrationId"),
-                                    request.getRequestURI(),
-                                    exception
-                            );
+                                .failureHandler((request, response, exception) -> {
+                                    // 1) 예외 로그 찍기
+                                    log.error("OAuth2 로그인 실패: registrationId={}, uri={}",
+                                            request.getParameter("registrationId"),
+                                            request.getRequestURI(),
+                                            exception
+                                    );
 
-                            sendErrorResponse(response, GlobalErrorCode.OAUTH_UNAUTHORIZED);
-                        })
+                                    sendErrorResponse(response, GlobalErrorCode.OAUTH_UNAUTHORIZED);
+                                })
                 )
                 // Disable HTTP session
                 .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 // Authorize endpoints
                 .authorizeHttpRequests(auth -> auth
-                        .anyRequest().permitAll()
+                        .requestMatchers("/static/**", "/index.html", "/static/**", "/login.html","/images/**", "/oauth2.html","/favicon.ico", "/css/**", "/js/**").permitAll()
+                        .requestMatchers("/").permitAll()
+                        .requestMatchers("/login/oauth2/**", "/oauth2/**", "/api/auth/**").permitAll()
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        .anyRequest().authenticated()
+//                                .anyRequest().permitAll()
                 )
 
                 /* 설명. 보호된 api 접근 시*/
