@@ -34,6 +34,7 @@ import org.springframework.security.web.access.AccessDeniedHandlerImpl;
 import org.springframework.security.web.context.SecurityContextHolderFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 import java.io.IOException;
 
@@ -59,10 +60,13 @@ public class SecurityConfig {
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
     private final CustomOidcUserService customOidcUserService;
     private final ObjectMapper objectMapper;
+    private final CorsConfigurationSource corsConfigurationSource;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                // CORS 설정을 dsl로 연결
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 // 가장 먼저 만날 필터(로깅 설정)
                 .addFilterBefore(requestResponseLoggingFilter,
                         SecurityContextHolderFilter.class)

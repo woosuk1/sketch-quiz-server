@@ -45,6 +45,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
+        // Preflight(OPTIONS) 요청은 바로 통과
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         // 1) HttpOnly 쿠키에서 액세스 토큰을 꺼냅니다.
         String token = WebUtils.getCookie(request, "access_token") != null
                 ? Objects.requireNonNull(WebUtils.getCookie(request, "access_token")).getValue()
