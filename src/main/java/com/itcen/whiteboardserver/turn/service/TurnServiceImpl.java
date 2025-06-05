@@ -118,7 +118,6 @@ public class TurnServiceImpl implements TurnService {
         );
     }
 
-    @Transactional
     private void quitGame(Long gameId) {
         broadcastTurnScore(gameId, TurnResponseType.GAME_FINISH);
 
@@ -170,8 +169,7 @@ public class TurnServiceImpl implements TurnService {
         return true;
     }
 
-    @Transactional
-    private void doTurnOver(Long gameId) {
+    private synchronized void doTurnOver(Long gameId) {
         Game game = getGameByGameId(gameId);
         Turn turn = game.getCurrentTurn();
 
@@ -189,7 +187,6 @@ public class TurnServiceImpl implements TurnService {
         applicationContext.getBean(TurnService.class).startTurn(gameId);
     }
 
-    @Transactional
     private void finalizeTurnScore(Long gameId) {
         Game game = getGameByGameId(gameId);
         Turn turn = game.getCurrentTurn();
@@ -224,7 +221,6 @@ public class TurnServiceImpl implements TurnService {
         broadcastTurnScore(gameId, TurnResponseType.FINISH);
     }
 
-    @Transactional
     private void broadcastTurnScore(Long gameId, TurnResponseType type) {
         Game game = getGameByGameId(gameId);
 
