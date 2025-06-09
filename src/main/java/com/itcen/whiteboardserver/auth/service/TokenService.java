@@ -170,7 +170,15 @@ public class TokenService {
         List<String> roles = claims.getPayload().get("roles", List.class);
         // 1) Redis에 저장된 값과 비교
         String key      = "refresh:" + username;
-        String storedJti = redis.opsForValue().get(key);
+
+        String storedJti;
+
+        try {
+             storedJti = redis.opsForValue().get(key);
+        }catch(Exception e){
+            log.error("Error retrieving refresh token from Redis: {}", e.getMessage());
+            throw new GlobalCommonException(GlobalErrorCode.REDIS_ERROR);
+        }
 
         if (!oldJti.equals(storedJti)) {
 //            throw new JwtException("Invalid refresh token");
@@ -196,7 +204,6 @@ public class TokenService {
         } catch (Exception e) {
             // Redis 삭제 과정에서 예외가 나더라도, 로그만 기록하고 흐름은 계속 이어간다.
             log.error("Error deleting refresh token from Redis: {}", e.getMessage());
-            throw new GlobalCommonException(GlobalErrorCode.REDIS_ERROR);
         }
 
         // 2) 무조건 쿠키를 삭제 (null 체크 없이), SecurityContext 초기화
