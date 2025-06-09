@@ -42,7 +42,7 @@ public class TurnServiceImpl implements TurnService {
     final TurnRepository turnRepository;
     final CorrectRepository correctRepository;
     final GameParticipationRepository gameParticipationRepository;
-    final int TURN_SECONDS = 5;
+    final int TURN_SECONDS = 150;
     final PlatformTransactionManager transactionManager;
     final ApplicationContext applicationContext;
     final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(5);
