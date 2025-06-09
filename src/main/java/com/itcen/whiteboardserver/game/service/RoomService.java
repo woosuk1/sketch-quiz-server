@@ -65,7 +65,7 @@ public class RoomService {
 
         // 방 코드 반환
         log.info("방 생성 성공: roomId={}, hostId={}", savedRoom.getId(), host.getId());
-        RoomParticipantResponse participantList = new RoomParticipantResponse(host.getId(), host.getNickname(), true);
+        RoomParticipantResponse participantList = new RoomParticipantResponse(host.getId(), host.getNickname(), true, host.getProfileColor());
         return new RoomInfoResponse(List.of(participantList), room.getId());
     }
 
@@ -88,7 +88,7 @@ public class RoomService {
                 .map(roomParticipation -> {
                     Member member = roomParticipation.getMember();
                     boolean isHost = Objects.equals(member.getId(), room.getHost().getId());
-                    return new RoomParticipantResponse(member.getId(), member.getNickname(), isHost);
+                    return new RoomParticipantResponse(member.getId(), member.getNickname(), isHost, member.getProfileColor());
                 })
                 .toList();
 
