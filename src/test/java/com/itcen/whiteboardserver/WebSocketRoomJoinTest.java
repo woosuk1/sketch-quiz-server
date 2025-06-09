@@ -96,7 +96,7 @@ public class WebSocketRoomJoinTest {
         List<String> roles = List.of(MemberRole.MEMBER.name());
 
         // TokenService의 issueTokens 메소드 호출
-        ResponseCookie[] cookies = tokenService.issueTokens(testUserEmail, testUser.getNickname(), String.valueOf(testUser.getId()), roles);
+        ResponseCookie[] cookies = tokenService.issueTokens(testUserEmail, testUser.getNickname(), String.valueOf(testUser.getId()), roles, testUser.getProfileColor().name());
 
         // ResponseCookie에서 Set-Cookie 헤더 문자열로 변환
         String cookieHeader = cookies[0].toString(); // access_token 쿠키

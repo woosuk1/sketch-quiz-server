@@ -1,6 +1,7 @@
 package com.itcen.whiteboardserver.security.principal;
 
 import com.itcen.whiteboardserver.member.enums.MemberRole;
+import com.itcen.whiteboardserver.member.enums.ProfileColor;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -16,16 +17,18 @@ public class CustomPrincipal implements UserDetails {
     private final String  email;
     private final String  nickname;
     private final String password; // 비밀번호는 필요 없지만 UserDetails를 구현하기 위해 필요
+    private final ProfileColor profileColor; // 프로필 색상은 필요 없지만 UserDetails를 구현하기 위해 필요
 
     private final Set<MemberRole> memberRoles;
 
     // MemberRole을 받아서 내부적으로 List<GrantedAuthority> 로 변환하는 생성자
-    public CustomPrincipal(Long id, String email, String nickname, String password, Set<MemberRole> memberRoles) {
+    public CustomPrincipal(Long id, String email, String nickname, String password, Set<MemberRole> memberRoles, ProfileColor profileColor) {
         this.id = id;
         this.email = email;
         this.nickname = nickname;
         this.password = password;
         this.memberRoles = memberRoles;
+        this.profileColor = profileColor; // 프로필 색상은 필요 없지만 UserDetails를 구현하기 위해 필요
     }
 
     // UserDetails를 구현하는 메서드들...
@@ -46,6 +49,7 @@ public class CustomPrincipal implements UserDetails {
     public Long getId()          { return id; }
     public String getNickname()  { return nickname; }
     public Set<MemberRole> getRoles() { return memberRoles;}
+    public ProfileColor getProfileColor() { return profileColor;}
 
 }
 
