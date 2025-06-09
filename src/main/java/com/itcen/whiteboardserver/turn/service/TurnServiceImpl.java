@@ -42,56 +42,50 @@ public class TurnServiceImpl implements TurnService {
     final TurnRepository turnRepository;
     final CorrectRepository correctRepository;
     final GameParticipationRepository gameParticipationRepository;
-    final int TURN_SECONDS = 10;
+    final int TURN_SECONDS = 150;
     final PlatformTransactionManager transactionManager;
     final ApplicationContext applicationContext;
     final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(5);
+    final TransactionTemplate transactionTemplate;
 
     @Override
     public void startTurn(Long gameId) {
-        if (!gameSession.canGoNextTurn(gameId)) {
-            quitGame(gameId);
+        //TODO: 현재 사용자가 게임 중이면 게임 시작하지 못하도록 함
+        Game game = getGameByGameId(gameId);
+
+        if (!gameSession.canGoNextTurn(game.getId())) {
+            quitGame(game);
 
             return;
         }
 
-        Game game = getGameByGameId(gameId);
         if (game.getCurrentTurn() != null && !game.getCurrentTurn().getIsTurnOver()) {
             throw new RuntimeException("현재 게임의 턴이 끝나지 않았습니다.");
         }
 
-        Turn turn = createTurn(gameId);
+        Turn turn = createTurn(game);
         turnRepository.save(turn);
 
         game.changeTurn(turn);
         gameRepository.save(game);
 
-        broadcastTurnInfo(gameId, turn);
-        sendDrawInfoToDrawer(gameId, turn);
+        turnRepository.flush();
+        gameRepository.flush();
 
-        scheduleTurnOver(turn.getId());
-    }
-
-    private void scheduleTurnOver(Long turnId) {
         scheduler.schedule(() -> {
             TransactionTemplate txTemplate = new TransactionTemplate(transactionManager);
-            txTemplate.execute(status -> {
 
-                Turn freshTurn = turnRepository.findById(turnId).orElseThrow();
-                if (freshTurn.getIsTurnOver()) {
-                    return null;
-                }
+            txTemplate.execute(
+                    status -> {
+                        broadcastTurnInfo(turn.getId());
+                        sendDrawInfoToDrawer(turn.getId());
 
-                Game game = freshTurn.getGame();
-                if (!game.getCurrentTurn().getId().equals(freshTurn.getId())) {
-                    throw new RuntimeException("게임의 현재 턴과 일치하지 않음");
-                }
+                        return null;
+                    }
+            );
+        }, 500, TimeUnit.MILLISECONDS);
 
-                doTurnOver(game.getId());
-
-                return null;
-            });
-        }, TURN_SECONDS, TimeUnit.SECONDS);
+        scheduleTurnOver(turn.getId());
     }
 
     @Override
@@ -116,27 +110,6 @@ public class TurnServiceImpl implements TurnService {
                         game.getId()
                 )
         );
-    }
-
-    private void quitGame(Long gameId) {
-        broadcastTurnScore(gameId, TurnResponseType.GAME_FINISH);
-
-        gameSession.removeSession(gameId);
-        Game game = getGameByGameId(gameId);
-
-        game.changeTurn(null);
-        game.quitGame();
-
-        gameRepository.save(game);
-    }
-
-    private void broadcastCorrect(CorrectData correctData) {
-        TurnResponse<CorrectData> response = new TurnResponse(
-                TurnResponseType.CORRECT,
-                correctData
-        );
-
-        messagingTemplate.convertAndSend("/topic/game/" + correctData.gameId(), response);
     }
 
     @Override
@@ -164,32 +137,71 @@ public class TurnServiceImpl implements TurnService {
             return false;
         }
 
-        doTurnOver(gameId);
-
+        doTurnOver(turn.getId());
         return true;
     }
 
-    private synchronized void doTurnOver(Long gameId) {
-        Game game = getGameByGameId(gameId);
-        Turn turn = game.getCurrentTurn();
+    private void scheduleTurnOver(Long turnId) {
+        scheduler.schedule(() -> {
+            TransactionTemplate txTemplate = new TransactionTemplate(transactionManager);
+            txTemplate.execute(status -> {
+                doTurnOver(turnId);
+
+                return null;
+            });
+        }, TURN_SECONDS, TimeUnit.SECONDS);
+    }
+
+    private void quitGame(Game game) {
+        broadcastTurnScore(game, TurnResponseType.GAME_FINISH);
+
+        gameSession.removeSession(game.getId());
+
+        game.changeTurn(null);
+        game.quitGame();
+
+        gameRepository.save(game);
+    }
+
+    private void broadcastCorrect(CorrectData correctData) {
+        TurnResponse<CorrectData> response = new TurnResponse(
+                TurnResponseType.CORRECT,
+                correctData
+        );
+
+        messagingTemplate.convertAndSend("/topic/game/" + correctData.gameId(), response);
+    }
+
+    private synchronized void doTurnOver(Long turnId) {
+        Turn turn = turnRepository.findById(turnId).orElseThrow(
+                () -> new RuntimeException("현재 turnId에 해당하는 턴이 존재하지 않습니다.")
+        );
+        Game game = turn.getGame();
 
         if (turn.getIsTurnOver()) {
             throw new RuntimeException("이미 끝난 턴입니다.");
         }
 
-        finalizeTurnScore(gameId);
+        if (game.getCurrentTurn() != turn) {
+            throw new RuntimeException("현재 게임의 턴과 해당 턴이 동일하지 않습니다.");
+        }
+
+        finalizeTurnScore(turn);
 
         game.thisTurnDown();
         gameRepository.save(game);
         turn.doTurnOver();
         turnRepository.save(turn);
 
-        applicationContext.getBean(TurnService.class).startTurn(gameId);
+        gameRepository.flush();
+        turnRepository.flush();
+
+        //TODO: Refactor
+        applicationContext.getBean(TurnService.class).startTurn(game.getId());
     }
 
-    private void finalizeTurnScore(Long gameId) {
-        Game game = getGameByGameId(gameId);
-        Turn turn = game.getCurrentTurn();
+    private void finalizeTurnScore(Turn turn) {
+        Game game = turn.getGame();
 
         //정답자 점수
         List<Correct> corrects = correctRepository.findAllByTurnOrderByCreatedAtDesc(turn);
@@ -218,12 +230,10 @@ public class TurnServiceImpl implements TurnService {
             gameParticipation.increaseScore(drawerScore);
         }
 
-        broadcastTurnScore(gameId, TurnResponseType.FINISH);
+        broadcastTurnScore(game, TurnResponseType.FINISH);
     }
 
-    private void broadcastTurnScore(Long gameId, TurnResponseType type) {
-        Game game = getGameByGameId(gameId);
-
+    private void broadcastTurnScore(Game game, TurnResponseType type) {
         List<GameParticipation> gameParticipations = gameParticipationRepository.findAllByGame(game);
 
         List<MemberScore> memberScores = new ArrayList<>();
@@ -236,21 +246,26 @@ public class TurnServiceImpl implements TurnService {
         TurnResponse<TurnQuitData> response = new TurnResponse<>(
                 type,
                 new TurnQuitData(
-                        gameId,
+                        game.getId(),
                         memberScores
                 )
         );
 
-        messagingTemplate.convertAndSend("/topic/game/" + gameId, response);
+        messagingTemplate.convertAndSend("/topic/game/" + game.getId(), response);
     }
 
-    private void broadcastTurnInfo(Long gameId, Turn turn) {
+    private void broadcastTurnInfo(Long turnId) {
+        Turn turn = getTurnByTurnId(turnId);
+        Game game = turn.getGame();
         TurnResponse<TurnData> response = TurnMapper.turnToTurnDataResponse(turn);
 
-        messagingTemplate.convertAndSend("/topic/game/" + gameId, response);
+        messagingTemplate.convertAndSend("/topic/game/" + game.getId(), response);
     }
 
-    private void sendDrawInfoToDrawer(Long gameId, Turn turn) {
+    private void sendDrawInfoToDrawer(Long turnId) {
+        Turn turn = getTurnByTurnId(turnId);
+        Game game = turn.getGame();
+
         TurnResponse<DrawerData> response = new TurnResponse(
                 TurnResponseType.DRAWER,
                 new DrawerData(
@@ -261,18 +276,17 @@ public class TurnServiceImpl implements TurnService {
 
         messagingTemplate.convertAndSendToUser(
                 turn.getMember().getEmail(),
-                "/topic/game/" + gameId,
+                "/topic/game/" + game.getId(),
                 response
         );
     }
 
-    private Turn createTurn(Long gameId) {
-        Long drawerId = gameSession.goNextTurnAndGetDrawer(gameId);
-        Game game = getGameByGameId(gameId);
+    private Turn createTurn(Game game) {
+        Long drawerId = gameSession.goNextTurnAndGetDrawer(game.getId());
         Member drawer = getMemberByMemberId(drawerId);
-        String quizWord = gameSession.getNowTurnQuizWord(gameId);
+        String quizWord = gameSession.getNowTurnQuizWord(game.getId());
         LocalDateTime startTime = LocalDateTime.now();
-        LocalDateTime endTime = startTime.plusSeconds(150);
+        LocalDateTime endTime = startTime.plusSeconds(TURN_SECONDS);
 
         return Turn.builder()
                 .game(game)
@@ -284,12 +298,20 @@ public class TurnServiceImpl implements TurnService {
     }
 
     private Member getMemberByMemberId(Long memberId) {
-        return memberRepository.getReferenceById(memberId);
+        return memberRepository.findById(memberId).orElseThrow(
+                () -> new RuntimeException("현재 memberId의 회원이 없습니다.")
+        );
     }
 
     private Game getGameByGameId(Long gameId) {
         return gameRepository.findById(gameId).orElseThrow(
                 () -> new RuntimeException("현재 gameId의 게임이 없습니다.")
+        );
+    }
+
+    private Turn getTurnByTurnId(Long turnId) {
+        return turnRepository.findById(turnId).orElseThrow(
+                () -> new RuntimeException("현재 turnId의 턴이 없습니다.")
         );
     }
 }
