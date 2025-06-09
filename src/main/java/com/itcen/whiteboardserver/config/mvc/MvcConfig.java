@@ -8,16 +8,19 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class MvcConfig implements WebMvcConfigurer {
     @Override
     public void addViewControllers(ViewControllerRegistry registry) {
-        // 1) API 전용 테스트 페이지
-        // /oauth2.html 로 직접 접근시키거나, /auth/login 을 여기로 포워드
+        // 1) OAuth2 로그인 시작·콜백 경로는 noop 처리 (Spring Security 필터가 처리하도록)
+        registry.addViewController("/oauth2/authorization/{registrationId}")
+                .setViewName("noop");
+        registry.addViewController("/login/oauth2/code/{registrationId}")
+                .setViewName("noop");
+
+        // 2) API 전용 테스트 페이지
         registry.addViewController("/api/auth/login")
                 .setViewName("forward:/oauth2.html");
-        // 만약 루트(/)도 여기로 보내서 SPA 테스트 페이지를 기본으로 쓰고 싶다면:
+        // 루트도 SPA 테스트 페이지로
         registry.addViewController("/")
                 .setViewName("forward:/oauth2.html");
-
-        // 2) OAuth2 실패 콜백에도 같은 곳으로
-        //    쿼리는 무시되므로, 아예 /auth/login 으로만 보내면 됩니다.
+        // 실패 콜백 쿼리 무시하고 같은 페이지로
         registry.addViewController("/api/auth/login?error")
                 .setViewName("forward:/oauth2.html");
     }
