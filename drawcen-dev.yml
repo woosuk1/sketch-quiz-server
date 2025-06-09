@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:latest
+    container_name: drawcen-postgres
+    environment:
+      POSTGRES_USER: yagumyagum
+      POSTGRES_PASSWORD: yagumyagum
+      POSTGRES_DB: drawcen
+    ports:
+      - "5432:5432"
+    volumes:
+      - drawcen-pg-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  mongodb:
+    image: mongo
+    container_name: drawcen-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+    ports:
+      - "27017:27017"
+    volumes:
+      - drawcen-mongo-data:/data/db
+    restart: unless-stopped
+
+  redis:
+    image: redis
+    container_name: drawcen-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - drawcen-redis-data:/data
+    restart: unless-stopped
+
+volumes:
+  drawcen-pg-data:
+  drawcen-mongo-data:
+  drawcen-redis-data:

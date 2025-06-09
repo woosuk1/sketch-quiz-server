@@ -1,7 +1,7 @@
 package com.itcen.whiteboardserver.game.controller;
 
 import com.itcen.whiteboardserver.game.dto.request.RoomJoinRequest;
-import com.itcen.whiteboardserver.game.dto.response.RoomResponse;
+import com.itcen.whiteboardserver.game.dto.response.RoomInfoResponse;
 import com.itcen.whiteboardserver.game.service.RoomService;
 import com.itcen.whiteboardserver.security.principal.CustomPrincipal;
 import jakarta.validation.Valid;
@@ -23,7 +23,7 @@ public class RoomController {
     // REST API 엔드포인트 - 방 생성
     @ResponseBody
     @PostMapping("/api/room")
-    public ResponseEntity<RoomResponse> createRoom(@AuthenticationPrincipal CustomPrincipal principal) {
+    public ResponseEntity<RoomInfoResponse> createRoom(@AuthenticationPrincipal CustomPrincipal principal) {
         return ResponseEntity.ok(roomService.createRoom(principal.getEmail()));
     }
 

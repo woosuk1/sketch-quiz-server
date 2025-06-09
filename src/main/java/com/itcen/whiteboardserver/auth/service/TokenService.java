@@ -170,7 +170,15 @@ public class TokenService {
         List<String> roles = claims.getPayload().get("roles", List.class);
         // 1) Redis에 저장된 값과 비교
         String key      = "refresh:" + username;
-        String storedJti = redis.opsForValue().get(key);
+
+        String storedJti;
+
+        try {
+             storedJti = redis.opsForValue().get(key);
+        }catch(Exception e){
+            log.error("Error retrieving refresh token from Redis: {}", e.getMessage());
+            throw new GlobalCommonException(GlobalErrorCode.REDIS_ERROR);
+        }
 
         if (!oldJti.equals(storedJti)) {
 //            throw new JwtException("Invalid refresh token");
@@ -238,10 +246,17 @@ public class TokenService {
     }
 
     private ResponseCookie clearCookie(String name) {
+        String path = "/";
+
+        // refresh_token의 경우 생성 시와 동일한 path 사용
+        if ("refresh_token".equals(name)) {
+            path = "/api/auth/oauth2/refresh";
+        }
+
         ResponseCookie cookie = ResponseCookie.from(name, "")
                 .httpOnly(true)
 //                .secure(true)
-                .path("/")
+                .path(path)
                 .maxAge(Duration.ZERO)
                 .sameSite("Lax")
                 .build();
