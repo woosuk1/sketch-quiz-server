@@ -196,11 +196,12 @@ public class TokenService {
         } catch (Exception e) {
             // Redis 삭제 과정에서 예외가 나더라도, 로그만 기록하고 흐름은 계속 이어간다.
             log.error("Error deleting refresh token from Redis: {}", e.getMessage());
+            throw new GlobalCommonException(GlobalErrorCode.REDIS_ERROR);
         }
 
         // 2) 무조건 쿠키를 삭제 (null 체크 없이), SecurityContext 초기화
-        ResponseCookie deleteAccessCookie  = clearCookie("access_token");
-        ResponseCookie deleteRefreshCookie = clearCookie("refresh_token");
+        ResponseCookie deleteAccessCookie  = clearAccessCookie("access_token");
+        ResponseCookie deleteRefreshCookie = clearRefreshCookie("refresh_token");
         SecurityContextHolder.clearContext();
 
         // 3) 삭제용 쿠키 배열 반환
@@ -237,11 +238,22 @@ public class TokenService {
         return cookie;
     }
 
-    private ResponseCookie clearCookie(String name) {
+    private ResponseCookie clearAccessCookie(String name) {
         ResponseCookie cookie = ResponseCookie.from(name, "")
                 .httpOnly(true)
 //                .secure(true)
                 .path("/")
+                .maxAge(Duration.ZERO)
+                .sameSite("Lax")
+                .build();
+        return cookie;
+    }
+
+    private ResponseCookie clearRefreshCookie(String name) {
+        ResponseCookie cookie = ResponseCookie.from(name, "")
+                .httpOnly(true)
+//                .secure(true)
+                .path("/api/auth/oauth2/refresh")
                 .maxAge(Duration.ZERO)
                 .sameSite("Lax")
                 .build();
