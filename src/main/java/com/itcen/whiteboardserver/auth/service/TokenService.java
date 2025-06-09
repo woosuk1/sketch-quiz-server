@@ -207,8 +207,8 @@ public class TokenService {
         }
 
         // 2) 무조건 쿠키를 삭제 (null 체크 없이), SecurityContext 초기화
-        ResponseCookie deleteAccessCookie  = clearAccessCookie("access_token");
-        ResponseCookie deleteRefreshCookie = clearRefreshCookie("refresh_token");
+        ResponseCookie deleteAccessCookie  = clearCookie("access_token");
+        ResponseCookie deleteRefreshCookie = clearCookie("refresh_token");
         SecurityContextHolder.clearContext();
 
         // 3) 삭제용 쿠키 배열 반환
@@ -245,22 +245,18 @@ public class TokenService {
         return cookie;
     }
 
-    private ResponseCookie clearAccessCookie(String name) {
-        ResponseCookie cookie = ResponseCookie.from(name, "")
-                .httpOnly(true)
-//                .secure(true)
-                .path("/")
-                .maxAge(Duration.ZERO)
-                .sameSite("Lax")
-                .build();
-        return cookie;
-    }
+    private ResponseCookie clearCookie(String name) {
+        String path = "/";
 
-    private ResponseCookie clearRefreshCookie(String name) {
+        // refresh_token의 경우 생성 시와 동일한 path 사용
+        if ("refresh_token".equals(name)) {
+            path = "/api/auth/oauth2/refresh";
+        }
+
         ResponseCookie cookie = ResponseCookie.from(name, "")
                 .httpOnly(true)
 //                .secure(true)
-                .path("/api/auth/oauth2/refresh")
+                .path(path)
                 .maxAge(Duration.ZERO)
                 .sameSite("Lax")
                 .build();
