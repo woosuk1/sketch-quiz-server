@@ -3,6 +3,7 @@ package com.itcen.whiteboardserver.auth.service;
 import com.itcen.whiteboardserver.global.exception.GlobalCommonException;
 import com.itcen.whiteboardserver.global.exception.GlobalErrorCode;
 import com.itcen.whiteboardserver.member.enums.MemberRole;
+import com.itcen.whiteboardserver.member.enums.ProfileColor;
 import com.itcen.whiteboardserver.security.principal.CustomPrincipal;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
@@ -60,10 +61,11 @@ public class TokenService {
      * 액세스 토큰과 리프레시 토큰을 생성한 뒤,
      * Redis에 JTI를 저장하고 ResponseCookie 배열을 반환한다.
      *
-     * @param username  사용자 식별자(예: 이메일)
-     * @param nickname  닉네임
-     * @param id        사용자 테이블 PK(문자열 형태)
-     * @param roles     권한 목록(예: ["ROLE_USER","ROLE_ADMIN"])
+     * @param username 사용자 식별자(예: 이메일)
+     * @param nickname 닉네임
+     * @param id       사용자 테이블 PK(문자열 형태)
+     * @param roles    권한 목록(예: ["ROLE_USER","ROLE_ADMIN"])
+     * @param profileColor 배경 색상
      * @return [0] = access_token 쿠키, [1] = refresh_token 쿠키
      */
 //    public void issueTokens(String username, String nickname, String id, List<String> roles,
@@ -72,14 +74,14 @@ public class TokenService {
             String username,
             String nickname,
             String id,
-            List<String> roles
-    ) {
+            List<String> roles,
+            String profileColor) {
         // 1) 기존 키 하나만 삭제할 필요 없이, 덮어쓰기
         String setKey = "refresh:" + username;
 
         // 2) 새 토큰 생성
-        String access  = createToken(username, nickname, id, roles, accessTtl);
-        String refresh = createToken(username, nickname, id, roles, refreshTtl);
+        String access  = createToken(username, nickname, id, roles, profileColor, accessTtl);
+        String refresh = createToken(username, nickname, id, roles, profileColor, refreshTtl);
 
         // 3) 새 JTI만 저장 (overwrite)
         String jti = jwtParser.parseSignedClaims(refresh).getPayload().getId();
@@ -112,6 +114,10 @@ public class TokenService {
             String id = (String) claims.get("id");
             String nickname = (String) claims.get("nickname");
 
+            ProfileColor profileColor = ProfileColor.valueOf(
+                    claims.get("profileColor", String.class)
+            );
+
             @SuppressWarnings("unchecked")
             List<String> rolesAsString = claims.get("roles", List.class);
             Set<MemberRole> rolesEnum = rolesAsString.stream()
@@ -124,7 +130,8 @@ public class TokenService {
                     username,
                     nickname,
                     /* 빈 문자열이어도 무방(패스워드는 이미 검증된 상태) */ "",
-                    rolesEnum
+                    rolesEnum,
+                    profileColor
             );
 
             return new UsernamePasswordAuthenticationToken(principal, token, principal.getAuthorities());
@@ -165,6 +172,9 @@ public class TokenService {
         String username = claims.getPayload().getSubject();
         String id = claims.getPayload().get("id", String.class);
         String nickname = claims.getPayload().get("nickname", String.class);
+
+        String profileColor = claims.getPayload().get("profileColor", String.class);
+
         String oldJti = claims.getPayload().getId();
         @SuppressWarnings("unchecked")
         List<String> roles = claims.getPayload().get("roles", List.class);
@@ -186,7 +196,7 @@ public class TokenService {
         }
 
         // 재사용 issueTokens
-        return issueTokens(username, nickname, id, roles);
+        return issueTokens(username, nickname, id, roles, profileColor);
     }
 
     /**
@@ -218,7 +228,7 @@ public class TokenService {
     // --- internal helpers ---
 
 
-    private String createToken(String subject, String nickname, String id, List<String> roles, Duration ttl) {
+    private String createToken(String subject, String nickname, String id, List<String> roles,String profileColor, Duration ttl) {
         return Jwts.builder()
                 .subject(subject)
                 .id(UUID.randomUUID().toString())
@@ -226,6 +236,7 @@ public class TokenService {
                 .claim("roles", roles)
                 .claim("nickname", nickname)
                 .claim("id", id)
+                .claim("profileColor", profileColor)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + ttl.toMillis()))
                 .signWith(key)
