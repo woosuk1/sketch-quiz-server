@@ -3,6 +3,7 @@ package com.itcen.whiteboardserver.auth.service;
 import com.itcen.whiteboardserver.member.entity.Member;
 import com.itcen.whiteboardserver.member.enums.AuthProvider;
 import com.itcen.whiteboardserver.member.enums.MemberRole;
+import com.itcen.whiteboardserver.member.enums.ProfileColor;
 import com.itcen.whiteboardserver.member.repository.MemberRepository;
 import com.itcen.whiteboardserver.member.service.MemberService;
 import com.itcen.whiteboardserver.security.principal.CustomPrincipal;
@@ -35,22 +36,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
         // CustomPrincipal을 사용하여 UserDetails를 반환
         return new CustomPrincipal(member.getId(), member.getEmail(), member.getPassword(),
-                member.getNickname(), member.getMemberRole());
-    }
-
-    @Transactional
-    public void registerUser(String email, String rawPassword) {
-        if (memberRepository.existsByEmail(email)) {
-            throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
-        }
-        Member user = Member.builder()
-                .email(email)
-                .password(passwordEncoder.encode(rawPassword))
-                .nickname(memberService.postRandomNickname().getNickname()) // nicknames 테이블에서 랜덤으로 닉네임 가져오기
-                .memberRole(Collections.singleton(MemberRole.MEMBER)) // 기본 역할 설정
-                .provider(AuthProvider.LOCAL) // enum 필드: LOCAL, GOOGLE, KAKAO
-                .build();
-        memberRepository.save(user);
+                member.getNickname(), member.getMemberRole(), member.getProfileColor());
     }
 
     @Transactional
@@ -65,6 +51,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 .email(email)
                 .password(passwordEncoder.encode("defaultPassword")) // OAuth2 사용자에게는 기본 비밀번호 설정
                 .nickname(memberService.postRandomNickname().getNickname()) // nicknames 테이블에서 랜덤으로 들고오기
+                .profileColor(ProfileColor.getRandomColor()) // ProfileColor enum에서 랜덤으로 색상 설정
                 .memberRole(Collections.singleton(MemberRole.MEMBER)) // 기본 역할 설정
                 .provider(AuthProvider.GOOGLE) // enum 필드: LOCAL, GOOGLE, KAKAO
                 .providerId((String) attributes.get("sub")) // google 고유 id

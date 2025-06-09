@@ -1,12 +1,15 @@
 package com.itcen.whiteboardserver.security.handler;
 
 import com.itcen.whiteboardserver.auth.service.TokenService;
+import com.itcen.whiteboardserver.global.exception.GlobalCommonException;
+import com.itcen.whiteboardserver.global.exception.GlobalErrorCode;
 import com.itcen.whiteboardserver.member.dto.MemberDTO;
 import com.itcen.whiteboardserver.member.enums.MemberRole;
 import com.itcen.whiteboardserver.member.service.MemberService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
@@ -22,6 +25,7 @@ import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
     private final TokenService tokenService;
@@ -52,7 +56,8 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                 email,
                 member.getNickname(),
                 String.valueOf(member.getId()),
-                roles
+                roles,
+                member.getProfileColor().name()
         );
 
         // 4) 반환받은 쿠키들을 Response 헤더에 추가

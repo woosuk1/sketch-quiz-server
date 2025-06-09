@@ -1,5 +1,6 @@
 package com.itcen.whiteboardserver.member.dto;
 
+import com.itcen.whiteboardserver.member.enums.ProfileColor;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,4 +18,7 @@ public class MemberResponseDTO {
     private String nickname;
     @Schema(description = "회원 email", example = "aa@gmail.com")
     private String email;
+    @Schema(description = "프로필 색상", example = "ORANGE")
+    private ProfileColor profileColor;
+
 }
