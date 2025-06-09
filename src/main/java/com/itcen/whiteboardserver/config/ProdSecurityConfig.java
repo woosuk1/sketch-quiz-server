@@ -18,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -123,16 +124,25 @@ public class ProdSecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/static/**", "/index.html", "/static/**", "/login.html","/images/**", "/oauth2.html","/favicon.ico", "/css/**", "/js/**").permitAll()
                         .requestMatchers("/").permitAll()
-                        .requestMatchers("/login/oauth2/**", "/oauth2/**", "/api/auth/**").permitAll()
+                        .requestMatchers("/login/oauth2/**", "/oauth2/**", "/api/auth/oauth2/refresh", "api/auth/logout").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                        .anyRequest().authenticated()
-//                                .anyRequest().permitAll()
+                        .requestMatchers(HttpMethod.GET,"/api/member", "/api/member/nickname").authenticated()
+                        .requestMatchers(HttpMethod.PATCH,"/api/member/nickname").authenticated()
+                        .requestMatchers(HttpMethod.POST,"/api/room").authenticated()
+                        .requestMatchers(HttpMethod.POST,"/api/friends/friends").authenticated()
+                        .requestMatchers("/ws/**").authenticated()
+
+                        .anyRequest().denyAll()
                 )
 
                 /* 설명. 보호된 api 접근 시*/
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(new CustomAuthenticationEntryPoint(GlobalErrorCode.ACCESS_TOKEN_EXPIRED))
-                        .accessDeniedHandler(new AccessDeniedHandlerImpl())
+//                        .accessDeniedHandler(new AccessDeniedHandlerImpl())
+                        .accessDeniedHandler(((request, response, accessDeniedException) -> {
+                            log.error("Access Denied: {}", accessDeniedException.getMessage(), accessDeniedException);
+                            sendErrorResponse(response, GlobalErrorCode.ENDPOINT_NOT_FOUND);
+                        }))
                 );
 
         return http.build();
