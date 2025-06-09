@@ -1,0 +1,8 @@
+spring:
+    datasource:
+        url: jdbc:postgresql://${DEV_DATABASE_HOST}:${POSTGRESQL_DATABASE_PORT}/${POSTGRESQL_DATABASE_NAME}
+    data:
+        redis:
+            host: ${DEV_REDIS_HOST}
+server:
+    port: ${DEV_SERVER_PORT}

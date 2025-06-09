@@ -54,6 +54,8 @@ spring:
             user-info-uri:     https://kapi.kakao.com/v2/user/me
             user-name-attribute: sub
             jwk-set-uri:       https://kauth.kakao.com/.well-known/jwks.json
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE}
 
 jwt:
   access-token-validity-seconds: ${ACCESS_TOKEN_EXPIRES_IN}
@@ -76,3 +78,4 @@ logging:
         org.springframework.web: INFO
         org.hibernate.SQL: DEBUG
         org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+

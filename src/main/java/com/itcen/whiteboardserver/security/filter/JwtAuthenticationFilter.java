@@ -4,14 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.itcen.whiteboardserver.auth.service.TokenService;
 import com.itcen.whiteboardserver.global.exception.GlobalCommonException;
 import com.itcen.whiteboardserver.global.exception.GlobalErrorCode;
-import com.itcen.whiteboardserver.global.exception.GlobalExceptionHandler;
 import com.itcen.whiteboardserver.global.exception.GlobalExceptionResponse;
-import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
@@ -38,6 +35,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         this.tokenService = tokenService;
         this.objectMapper = objectMapper;
     }
+
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,
@@ -59,16 +57,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         /* 설명.
          *  보호되는 api 접근 시, token == null -> filter chain을 타고
          *  40101 error를 보낼 시 front에서 refresh 경로로 요청을 보냄
-        * */
+         * */
         if (token != null) {
             try {
                 // 2) 정상적인 경우: 토큰 검증 후 Authentication 반환
                 Authentication auth = tokenService.authenticateAccess(token);
-                    SecurityContextHolder.getContext().setAuthentication(auth);
+                SecurityContextHolder.getContext().setAuthentication(auth);
             } catch (GlobalCommonException invalid) {
                 /* 설명. 이 때 catch 되는 예외는 서명 오류 등의 예외이다. */
                 log.info("Invalid access token for {} {}: {}", request.getMethod(), request.getRequestURI(), invalid.getMessage());
-                sendErrorResponse(response,GlobalErrorCode.INVALID_ACCESS_TOKEN);
+                sendErrorResponse(response, GlobalErrorCode.INVALID_ACCESS_TOKEN);
                 return;
             }
         }
@@ -77,12 +75,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
          *  1. 인증된 토큰
          *  2. token이 null일 시
          *  3. public api
-        * */
+         * */
         filterChain.doFilter(request, response);
     }
 
 
-    private void sendErrorResponse(HttpServletResponse response,GlobalErrorCode errorCode) throws IOException {
+    private void sendErrorResponse(HttpServletResponse response, GlobalErrorCode errorCode) throws IOException {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
