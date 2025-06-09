@@ -42,6 +42,7 @@ public class MemberController {
                 .id(principal.getId())
                 .nickname(principal.getNickname())
                 .email(principal.getEmail())
+                .profileColor(principal.getProfileColor())
                 .build();
 
         return ResponseEntity.ok()

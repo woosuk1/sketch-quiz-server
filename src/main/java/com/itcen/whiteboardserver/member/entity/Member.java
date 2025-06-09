@@ -2,6 +2,7 @@ package com.itcen.whiteboardserver.member.entity;
 
 import com.itcen.whiteboardserver.member.enums.AuthProvider;
 import com.itcen.whiteboardserver.member.enums.MemberRole;
+import com.itcen.whiteboardserver.member.enums.ProfileColor;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -34,6 +35,10 @@ public class Member {
     @Column(name = "password", nullable = false)
     private String password;
 
+    @Column(name = "profile_color", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private ProfileColor profileColor;
+
     @CreatedDate
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt; // 생성 시간
@@ -52,4 +57,5 @@ public class Member {
 
     @Column(name = "provider_id")
     private String providerId;
+
 }

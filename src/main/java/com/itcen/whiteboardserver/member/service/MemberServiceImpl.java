@@ -26,7 +26,7 @@ public class MemberServiceImpl implements MemberService {
     @Transactional(readOnly = true)
     public MemberDTO getMemberByEmail(String email) {
         return memberRepository.findByEmail(email)
-                .map(member -> new MemberDTO(member.getId(), member.getNickname(), member.getEmail(), member.getMemberRole()))
+                .map(member -> new MemberDTO(member.getId(), member.getNickname(), member.getEmail(), member.getMemberRole(), member.getProfileColor()))
                 .orElseThrow(() -> new GlobalCommonException(GlobalErrorCode.MEMBER_NOT_FOUND));
     }
 
@@ -94,7 +94,8 @@ public class MemberServiceImpl implements MemberService {
                 memberDTO = new MemberResponseDTO(
                         memberId,
                         nicknameDTO.getNickname(),
-                        principal.getEmail()
+                        principal.getEmail(),
+                        principal.getProfileColor()
                 );
 
             } catch (Exception e) {
