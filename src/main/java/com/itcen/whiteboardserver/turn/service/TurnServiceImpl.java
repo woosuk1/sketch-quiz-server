@@ -2,8 +2,10 @@ package com.itcen.whiteboardserver.turn.service;
 
 import com.itcen.whiteboardserver.game.entity.Game;
 import com.itcen.whiteboardserver.game.entity.GameParticipation;
+import com.itcen.whiteboardserver.game.entity.Room;
 import com.itcen.whiteboardserver.game.repository.GameParticipationRepository;
 import com.itcen.whiteboardserver.game.repository.GameRepository;
+import com.itcen.whiteboardserver.game.repository.RoomRepository;
 import com.itcen.whiteboardserver.game.session.GameSession;
 import com.itcen.whiteboardserver.member.entity.Member;
 import com.itcen.whiteboardserver.member.repository.MemberRepository;
@@ -15,9 +17,11 @@ import com.itcen.whiteboardserver.turn.entitiy.Turn;
 import com.itcen.whiteboardserver.turn.mapper.TurnMapper;
 import com.itcen.whiteboardserver.turn.repository.CorrectRepository;
 import com.itcen.whiteboardserver.turn.repository.TurnRepository;
+import jakarta.persistence.OptimisticLockException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationContext;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -47,6 +51,7 @@ public class TurnServiceImpl implements TurnService {
     final ApplicationContext applicationContext;
     final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(5);
     final TransactionTemplate transactionTemplate;
+    final RoomRepository roomRepository;
 
     @Override
     public void startTurn(Long gameId) {
@@ -74,7 +79,6 @@ public class TurnServiceImpl implements TurnService {
 
         scheduler.schedule(() -> {
             TransactionTemplate txTemplate = new TransactionTemplate(transactionManager);
-
             txTemplate.execute(
                     status -> {
                         broadcastTurnInfo(turn.getId());
@@ -157,10 +161,17 @@ public class TurnServiceImpl implements TurnService {
 
         gameSession.removeSession(game.getId());
 
-        game.changeTurn(null);
+        game.thisTurnDown();
         game.quitGame();
 
+        Room room = roomRepository.findByCurrentGame(game).orElseThrow(
+                () -> new RuntimeException("현재 game에 해당하는 방이 없습니다.")
+        );
+
+        room.updateStatus(Room.RoomStatus.WAITING);
+
         gameRepository.save(game);
+        roomRepository.save(room);
     }
 
     private void broadcastCorrect(CorrectData correctData) {
@@ -172,32 +183,36 @@ public class TurnServiceImpl implements TurnService {
         messagingTemplate.convertAndSend("/topic/game/" + correctData.gameId(), response);
     }
 
-    private synchronized void doTurnOver(Long turnId) {
-        Turn turn = turnRepository.findById(turnId).orElseThrow(
-                () -> new RuntimeException("현재 turnId에 해당하는 턴이 존재하지 않습니다.")
-        );
-        Game game = turn.getGame();
+    private void doTurnOver(Long turnId) {
+        try {
+            Turn turn = turnRepository.findById(turnId).orElseThrow(
+                    () -> new RuntimeException("현재 turnId에 해당하는 턴이 존재하지 않습니다.")
+            );
+            Game game = turn.getGame();
 
-        if (turn.getIsTurnOver()) {
-            throw new RuntimeException("이미 끝난 턴입니다.");
+            if (turn.getIsTurnOver()) {
+                throw new RuntimeException("이미 끝난 턴입니다.");
+            }
+
+            if (!game.getCurrentTurn().equals(turn)) {
+                throw new RuntimeException("현재 게임의 턴과 해당 턴이 동일하지 않습니다.");
+            }
+
+            finalizeTurnScore(turn);
+
+            game.thisTurnDown();
+            gameRepository.save(game);
+            turn.doTurnOver();
+            turnRepository.save(turn);
+
+            gameRepository.flush();
+            turnRepository.flush();
+
+            applicationContext.getBean(TurnService.class).startTurn(game.getId());
+        } catch (OptimisticLockingFailureException e) {
+            //TODO: 좋은 처리 고민
+            throw new RuntimeException("낙관적 lock 적용");
         }
-
-        if (game.getCurrentTurn() != turn) {
-            throw new RuntimeException("현재 게임의 턴과 해당 턴이 동일하지 않습니다.");
-        }
-
-        finalizeTurnScore(turn);
-
-        game.thisTurnDown();
-        gameRepository.save(game);
-        turn.doTurnOver();
-        turnRepository.save(turn);
-
-        gameRepository.flush();
-        turnRepository.flush();
-
-        //TODO: Refactor
-        applicationContext.getBean(TurnService.class).startTurn(game.getId());
     }
 
     private void finalizeTurnScore(Turn turn) {
