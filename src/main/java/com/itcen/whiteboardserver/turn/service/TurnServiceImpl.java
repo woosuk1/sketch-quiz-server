@@ -168,7 +168,7 @@ public class TurnServiceImpl implements TurnService {
                 () -> new RuntimeException("현재 game에 해당하는 방이 없습니다.")
         );
 
-        room.updateStatus(Room.RoomStatus.WAITING);
+        room.updateStatus(Room.RoomStatus.FINISHED);
 
         gameRepository.save(game);
         roomRepository.save(room);
