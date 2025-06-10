@@ -109,7 +109,7 @@ public class RedisRateLimitingFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest req) {
-        // /auth/oauth2/login, /auth/refresh 두 경로만 필터링 대상
+        // /api/auth/oauth2/login, /api/auth/refresh 두 경로만 필터링 대상
         return !(
                 (req.getMethod().equals("POST") && req.getRequestURI().equals("/api/auth/oauth2/refresh")) ||
                 (req.getMethod().equals("POST") && req.getRequestURI().equals("/api/auth/login"))

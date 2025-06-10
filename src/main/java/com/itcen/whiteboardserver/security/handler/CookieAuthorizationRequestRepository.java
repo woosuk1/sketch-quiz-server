@@ -1,4 +1,4 @@
-package com.itcen.whiteboardserver.security.oauth;
+package com.itcen.whiteboardserver.security.handler;
 
 
 import jakarta.servlet.http.Cookie;

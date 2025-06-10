@@ -13,7 +13,6 @@ import org.springframework.context.annotation.Configuration;
                 description = "DRAWCEN 프로젝트 API 명세서",
                 version = "v1"
         )
-//        security = {@SecurityRequirement(name = "Bearer Authentication")}
 )
 @Configuration
 public class OpenAPIConfig {
@@ -36,6 +35,14 @@ public class OpenAPIConfig {
         return GroupedOpenApi.builder()
                 .group("인증 관련 API")
                 .pathsToMatch("/api/auth/**") // 특정 경로만 포함
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi allApi() {
+        return GroupedOpenApi.builder()
+                .group("모든 API")
+                .pathsToMatch("/api/**") // 특정 경로만 포함
                 .build();
     }
 
