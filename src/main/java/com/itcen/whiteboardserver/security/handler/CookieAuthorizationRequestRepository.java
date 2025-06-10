@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.web.util.WebUtils;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.*;
 import java.util.Base64;
@@ -14,6 +15,7 @@ import java.util.Base64;
 /**
  * OAuth2AuthorizationRequest 를 세션 대신 암호화된 쿠키에 저장/로드/제거합니다.
  */
+@Slf4j
 public class CookieAuthorizationRequestRepository
         implements AuthorizationRequestRepository<OAuth2AuthorizationRequest> {
 
