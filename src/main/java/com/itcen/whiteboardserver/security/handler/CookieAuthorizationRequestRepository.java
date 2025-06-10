@@ -22,15 +22,25 @@ public class CookieAuthorizationRequestRepository
 
     @Override
     public OAuth2AuthorizationRequest loadAuthorizationRequest(HttpServletRequest request) {
+        String requestState = request.getParameter("state");
         Cookie cookie = WebUtils.getCookie(request, COOKIE_NAME);
         if (cookie == null) return null;
 
-        byte[] data = Base64.getUrlDecoder().decode(cookie.getValue());
-        try (ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(data))) {
-            return (OAuth2AuthorizationRequest) ois.readObject();
+        OAuth2AuthorizationRequest authRequest;
+        try {
+            byte[] data = Base64.getUrlDecoder().decode(cookie.getValue());
+            try (ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(data))) {
+                authRequest = (OAuth2AuthorizationRequest) ois.readObject();
+            }
         } catch (Exception e) {
             throw new IllegalStateException("Failed to deserialize OAuth2AuthorizationRequest", e);
         }
+
+        // 여기서 실제 쿠키에 저장된 state 와 요청으로 온 state 를 로그로 찍는다
+        log.debug("[OAuth2] 쿠키에서 로드된 state={} / 요청 파라미터 state={}",
+                authRequest.getState(), requestState);
+
+        return authRequest;
     }
 
     @Override
@@ -53,6 +63,8 @@ public class CookieAuthorizationRequestRepository
             cookie.setPath("/");
             cookie.setMaxAge(COOKIE_MAX_AGE);
             response.addCookie(cookie);
+
+            log.debug("[OAuth2] AuthorizationRequest 저장: state={}", authRequest.getState());
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to serialize OAuth2AuthorizationRequest", e);
         }
