@@ -3,6 +3,7 @@ package com.itcen.whiteboardserver.security.handler;
 import com.itcen.whiteboardserver.auth.service.TokenService;
 import com.itcen.whiteboardserver.member.dto.MemberDTO;
 import com.itcen.whiteboardserver.member.enums.MemberRole;
+import com.itcen.whiteboardserver.member.enums.ProfileColor;
 import com.itcen.whiteboardserver.member.service.MemberService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -10,7 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -31,7 +32,7 @@ import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class OAuth2LoginSuccessHandlerTest {
+class OAuth2LoginSuccessHandlerTests {
 
     /* 설명. 스텁과 객체를 자동으로 초기화*/
     @Mock MemberService memberService;
@@ -41,6 +42,8 @@ class OAuth2LoginSuccessHandlerTest {
     @Mock OAuth2AuthenticationToken oauthToken;
     @Captor ArgumentCaptor<String> headerName;
     @Captor ArgumentCaptor<String> headerValue;
+    @Value("${FRONTEND_REDIRECT_URL}")
+    private String frontendRedirectUrl;
 
     @InjectMocks OAuth2LoginSuccessHandler handler;
 
@@ -64,6 +67,7 @@ class OAuth2LoginSuccessHandlerTest {
                 .email("u@example.com")
                 .nickname("nick")
                 .memberRole(Set.of(MemberRole.MEMBER))
+                .profileColor(ProfileColor.HOTPINK)
                 .build();
         given(memberService.getMemberByEmail(email)).willReturn(m);
 
@@ -74,7 +78,8 @@ class OAuth2LoginSuccessHandlerTest {
                 eq(email),
                 eq("nick"),
                 eq("1"),
-                eq(List.of("MEMBER"))
+                eq(List.of("MEMBER")),
+                eq("HOTPINK")
         )).willReturn(new ResponseCookie[]{ access, refresh });
 
 
@@ -94,6 +99,6 @@ class OAuth2LoginSuccessHandlerTest {
                 .anySatisfy(v -> assertThat(v).contains("refresh_token=R"));
 
         // 마지막엔 redirect 도 놓치지 않고 검증
-        then(response).should().sendRedirect("/");
+        then(response).should().sendRedirect(frontendRedirectUrl);
     }
 }
