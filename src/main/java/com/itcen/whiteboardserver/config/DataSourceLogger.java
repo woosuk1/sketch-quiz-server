@@ -2,11 +2,13 @@ package com.itcen.whiteboardserver.config;
 
 import com.zaxxer.hikari.HikariDataSource;
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import javax.sql.DataSource;
 
 @Component
+@Slf4j
 public class DataSourceLogger {
 
     private final DataSource dataSource;
@@ -18,9 +20,9 @@ public class DataSourceLogger {
     @PostConstruct
     public void logJdbcUrl() {
         if (dataSource instanceof HikariDataSource hikari) {
-            System.out.println("◆ HikariCP JDBC URL: " + hikari.getJdbcUrl());
+            log.info("◆ HikariCP JDBC URL: {}", hikari.getJdbcUrl());
         } else {
-            System.out.println("◆ DataSource is not Hikari: " + dataSource);
+            log.info("◆ DataSource is not Hikari: {}", dataSource);
         }
     }
 }
