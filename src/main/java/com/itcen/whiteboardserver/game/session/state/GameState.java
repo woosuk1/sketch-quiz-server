@@ -20,7 +20,6 @@ public class GameState {
     private GameStatus status;
 
 
-    //TODO: Exception 반환형 추후 고려
     public static GameState createGameState(List<Long> drawerSequence, List<String> quizWords) {
         int drawerCnt = drawerSequence.size();
         if (drawerCnt < 2 || drawerCnt > 6) {
