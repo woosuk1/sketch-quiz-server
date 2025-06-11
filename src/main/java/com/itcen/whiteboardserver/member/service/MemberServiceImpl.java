@@ -56,7 +56,13 @@ public class MemberServiceImpl implements MemberService {
          *  2. 가져온 닉네임을 사용자의 닉네임으로 설정한다.
          *  3. 사용한 닉네임은 is_used를 true로 변경한다.
         * */
+
         NicknameDTO randomNickname = nicknamesRepository.findRandomNickname();
+
+        if(randomNickname == null) {
+            throw new GlobalCommonException(GlobalErrorCode.NICKNAME_NOT_FOUND);
+        }
+
 
         nicknamesRepository.updateIsUsed(randomNickname.getId(), true);
 

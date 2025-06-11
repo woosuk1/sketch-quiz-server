@@ -64,7 +64,7 @@ class MemberControllerTests {
     @Test
     @DisplayName("Principal이 null 이면 MEMBER_NOT_FOUND 예외 발생")
     void getMember_withNullPrincipal_throwsGlobalCommonException() {
-        // when / then
+        // --- When / Then ---
         assertThatThrownBy(() -> memberController.getMember(null))
                 .isInstanceOf(GlobalCommonException.class)
                 .extracting("errorCode")
