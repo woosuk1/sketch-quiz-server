@@ -10,6 +10,7 @@ public class GameMapper {
                 .memberId(member.getId())
                 .nickName(member.getNickname())
                 .score(0)
+                .profileColor(member.getProfileColor())
                 .build();
     }
 }

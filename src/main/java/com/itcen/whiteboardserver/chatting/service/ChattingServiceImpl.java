@@ -6,6 +6,7 @@ import com.itcen.whiteboardserver.member.entity.Member;
 import com.itcen.whiteboardserver.member.repository.MemberRepository;
 import com.itcen.whiteboardserver.turn.dto.response.TurnResponse;
 import com.itcen.whiteboardserver.turn.dto.response.TurnResponseType;
+import com.itcen.whiteboardserver.turn.dto.response.data.ChatData;
 import com.itcen.whiteboardserver.turn.service.TurnService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -22,14 +23,14 @@ public class ChattingServiceImpl implements ChattingService {
 
     @Override
     public void chat(ChattingRequest chattingRequest) {
-        if (!gameSession.isGamePlaying(chattingRequest.gameId())) {
-            broadcastChat(chattingRequest.gameId(), chattingRequest.message());
-            return;
-        }
-
         Member member = memberRepository.findByEmail(chattingRequest.email()).orElseThrow(
                 () -> new RuntimeException("해당하는 이메일의 회원이 존재하지 않습니다.")
         );
+
+        if (!gameSession.isGamePlaying(chattingRequest.gameId())) {
+            broadcastChat(chattingRequest.gameId(), chattingRequest.message(), member);
+            return;
+        }
 
         if (!gameSession.isThisMemberParticipant(chattingRequest.gameId(), member.getId())) {
             throw new RuntimeException("채팅 요청한 회원이 게임 참가자가 아닙니다.");
@@ -52,14 +53,18 @@ public class ChattingServiceImpl implements ChattingService {
             turnService.correct(chattingRequest.gameId(), member.getId());
         }
 
-        broadcastChat(chattingRequest.gameId(), message);
+        broadcastChat(chattingRequest.gameId(), message, member);
         turnService.turnOverIfPossible(chattingRequest.gameId());
     }
 
-    private void broadcastChat(Long gameId, String message) {
-        TurnResponse<String> response = new TurnResponse(
+    private void broadcastChat(Long gameId, String message, Member member) {
+        TurnResponse<ChatData> response = new TurnResponse(
                 TurnResponseType.CHAT,
-                message
+                new ChatData(
+                        message,
+                        member.getId(),
+                        member.getNickname()
+                )
         );
 
         messagingTemplate.convertAndSend("/topic/game/" + gameId + "/chat", response);
