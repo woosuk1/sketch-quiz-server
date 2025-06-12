@@ -47,7 +47,7 @@ public class TurnServiceImpl implements TurnService {
     final TurnRepository turnRepository;
     final CorrectRepository correctRepository;
     final GameParticipationRepository gameParticipationRepository;
-    final int TURN_SECONDS = 150;
+    final int TURN_SECONDS = 90;
     final PlatformTransactionManager transactionManager;
     final ApplicationContext applicationContext;
     final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(5);
@@ -215,7 +215,6 @@ public class TurnServiceImpl implements TurnService {
 
             applicationContext.getBean(TurnService.class).startTurn(game.getId());
         } catch (OptimisticLockingFailureException e) {
-            //TODO: 좋은 처리 고민
             throw new RuntimeException("낙관적 lock 적용");
         }
     }
