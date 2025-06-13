@@ -24,6 +24,15 @@ public class Game {
     @Column(nullable = false)
     private GameStatus status;
 
+    @Version
+    private int version;
+
+    public Game(Long id, Turn currentTurn, GameStatus status) {
+        this.id = id;
+        this.currentTurn = currentTurn;
+        this.status = status;
+    }
+
     public enum GameStatus {
         NOT_STARTED, IN_PROGRESS, ENDED
     }
@@ -36,7 +45,7 @@ public class Game {
         currentTurn = null;
     }
 
-    public void quitGame(){
+    public void quitGame() {
         status = GameStatus.ENDED;
     }
 }

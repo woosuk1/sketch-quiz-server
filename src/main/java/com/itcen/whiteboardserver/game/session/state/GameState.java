@@ -18,9 +18,9 @@ public class GameState {
     private int totalTurnCnt;
     private int nowTurn;
     private GameStatus status;
+    private static final int TURN = 2;
 
 
-    //TODO: Exception 반환형 추후 고려
     public static GameState createGameState(List<Long> drawerSequence, List<String> quizWords) {
         int drawerCnt = drawerSequence.size();
         if (drawerCnt < 2 || drawerCnt > 6) {
@@ -35,7 +35,7 @@ public class GameState {
         return new GameState(
                 List.copyOf(drawerSequence),
                 List.copyOf(quizWords),
-                3 * drawerCnt,
+                TURN * drawerCnt,
                 -1,
                 GameStatus.NOT_STARTED
         );
