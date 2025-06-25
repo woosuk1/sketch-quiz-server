@@ -1,9 +1,12 @@
 package com.itcen.whiteboardserver.auth.service;
 
+import com.itcen.whiteboardserver.auth.dto.TokenDTO;
 import com.itcen.whiteboardserver.global.exception.GlobalCommonException;
 import com.itcen.whiteboardserver.global.exception.GlobalErrorCode;
+import com.itcen.whiteboardserver.member.dto.MemberDTO;
 import com.itcen.whiteboardserver.member.enums.MemberRole;
 import com.itcen.whiteboardserver.member.enums.ProfileColor;
+import com.itcen.whiteboardserver.member.service.MemberService;
 import com.itcen.whiteboardserver.security.principal.CustomPrincipal;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
@@ -14,6 +17,7 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
@@ -37,11 +41,13 @@ public class TokenService {
     private final Duration accessTtl;
     private final Duration refreshTtl;
     private final JwtParser jwtParser;
+    private final MemberService memberService;
 
     public TokenService(StringRedisTemplate redis,
                         @Value("${jwt.secret}") String secret,
                         @Value("${jwt.access-token-validity-seconds}") long accessSeconds,
-                        @Value("${jwt.refresh-token-validity-seconds}") long refreshSeconds) {
+                        @Value("${jwt.refresh-token-validity-seconds}") long refreshSeconds,
+                        MemberService memberService) {
         this.redis = redis;
         byte[] keyBytes = Base64.getDecoder().decode(secret);
         this.key = Keys.hmacShaKeyFor(keyBytes);
@@ -50,6 +56,7 @@ public class TokenService {
                 .build();
         this.accessTtl = Duration.ofSeconds(accessSeconds);
         this.refreshTtl = Duration.ofSeconds(refreshSeconds);
+        this.memberService = memberService;
     }
 
     // -------------------------------------
@@ -68,7 +75,8 @@ public class TokenService {
      * @param profileColor 배경 색상
      * @return [0] = access_token 쿠키, [1] = refresh_token 쿠키
      */
-    public ResponseCookie[] issueTokens(
+//    public ResponseCookie[] issueTokens(
+    public TokenDTO issueTokens(
             String username,
             String nickname,
             String id,
@@ -93,10 +101,18 @@ public class TokenService {
         }
 
         // 4) 쿠키 세팅
-        ResponseCookie accessCookie = addCookie("access_token",  access,  accessTtl,  "/");
+//        ResponseCookie accessCookie = addCookie("access_token",  access,  accessTtl,  "/");
         ResponseCookie refreshCookie = addCookie("refresh_token", refresh, refreshTtl, "/api/auth/oauth2/refresh");
+        TokenDTO tokenDTO = TokenDTO.builder()
+                .accessToken(access)
+                .refreshToken(refreshCookie)
+                .build();
 
-        return new ResponseCookie[]{ accessCookie, refreshCookie };
+        log.debug("check1---\n" + tokenDTO.getAccessToken());
+        log.debug(tokenDTO.getRefreshToken().toString());
+
+//        return new ResponseCookie[]{ accessCookie, refreshCookie };
+        return tokenDTO;
     }
 
 
@@ -150,7 +166,8 @@ public class TokenService {
      * @param old  클라이언트가 보낸 refresh_token 문자열(JWT)
      * @return [0] = 새 access_token 쿠키, [1] = 새 refresh_token 쿠키
      */
-    public ResponseCookie[] rotateRefresh(String old) {
+//    public ResponseCookie[] rotateRefresh(String old) {
+    public TokenDTO rotateRefresh(String old) {
         if (old == null) {
             log.error("Missing refresh token");
             throw new GlobalCommonException(GlobalErrorCode.REFRESH_TOKEN_EXPIRED);
@@ -268,5 +285,29 @@ public class TokenService {
                 .sameSite("Lax")
                 .build();
         return cookie;
+    }
+
+    public TokenDTO login(Authentication authentication) {
+        OAuth2AuthenticationToken oauthToken =
+                (OAuth2AuthenticationToken) authentication;
+        String email = oauthToken.getPrincipal().getAttribute("email");
+
+        MemberDTO member = memberService.getMemberByEmail(email);
+
+        Set<MemberRole> rolesSet = member.getMemberRole();
+
+        List<String> roles = rolesSet.stream()
+                .map(MemberRole::name)
+                .collect(Collectors.toList());
+
+        // 3) 토큰 발급: 서비스에서 두 개의 ResponseCookie 반환
+//        ResponseCookie[] cookies = issueTokens(
+//                email,
+//                member.getNickname(),
+//                String.valueOf(member.getId()),
+//                roles,
+//                member.getProfileColor().name()
+//        );
+        return issueTokens(email, member.getNickname(), String.valueOf(member.getId()), roles, member.getProfileColor().name());
     }
 }

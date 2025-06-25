@@ -100,7 +100,9 @@ public class SecurityConfig {
                                                 // OIDC (openid) 용
                                                 .oidcUserService(customOidcUserService)
                                 )
-                                .successHandler(oAuth2LoginSuccessHandler)
+//                                .successHandler(oAuth2LoginSuccessHandler)
+                                .defaultSuccessUrl("/api/auth/oauth2/success", true)
+
 
                                 .failureHandler((request, response, exception) -> {
                                     // 1) 예외 로그 찍기
