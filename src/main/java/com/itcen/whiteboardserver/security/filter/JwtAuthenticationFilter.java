@@ -19,6 +19,7 @@ import org.springframework.web.util.WebUtils;
 
 import java.io.IOException;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * JWT authentication filter: extracts access_token from HttpOnly cookie,
@@ -50,9 +51,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         // 1) HttpOnly 쿠키에서 액세스 토큰을 꺼냅니다.
-        String token = WebUtils.getCookie(request, "access_token") != null
-                ? Objects.requireNonNull(WebUtils.getCookie(request, "access_token")).getValue()
-                : null;
+//        String token = WebUtils.getCookie(request, "access_token") != null
+//                ? Objects.requireNonNull(WebUtils.getCookie(request, "access_token")).getValue()
+//                : null;
+
+        // 1) frontend에서 보내주는 access token을 꺼냅니다.
+        String token = Optional.ofNullable(request.getHeader("Authorization"))
+                .filter(auth -> auth.startsWith("Bearer "))
+                .map(auth -> auth.substring(7))
+                .orElse(null);
+
 
         /* 설명.
          *  보호되는 api 접근 시, token == null -> filter chain을 타고

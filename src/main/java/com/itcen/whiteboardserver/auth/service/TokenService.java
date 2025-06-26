@@ -41,7 +41,6 @@ public class TokenService {
     private final Duration accessTtl;
     private final Duration refreshTtl;
     private final JwtParser jwtParser;
-    private final MemberService memberService;
 
     public TokenService(StringRedisTemplate redis,
                         @Value("${jwt.secret}") String secret,
@@ -56,7 +55,6 @@ public class TokenService {
                 .build();
         this.accessTtl = Duration.ofSeconds(accessSeconds);
         this.refreshTtl = Duration.ofSeconds(refreshSeconds);
-        this.memberService = memberService;
     }
 
     // -------------------------------------
@@ -75,8 +73,7 @@ public class TokenService {
      * @param profileColor 배경 색상
      * @return [0] = access_token 쿠키, [1] = refresh_token 쿠키
      */
-//    public ResponseCookie[] issueTokens(
-    public TokenDTO issueTokens(
+    public ResponseCookie[] issueTokens(
             String username,
             String nickname,
             String id,
@@ -102,17 +99,11 @@ public class TokenService {
 
         // 4) 쿠키 세팅
 //        ResponseCookie accessCookie = addCookie("access_token",  access,  accessTtl,  "/");
-        ResponseCookie refreshCookie = addCookie("refresh_token", refresh, refreshTtl, "/api/auth/oauth2/refresh");
-        TokenDTO tokenDTO = TokenDTO.builder()
-                .accessToken(access)
-                .refreshToken(refreshCookie)
-                .build();
+        ResponseCookie accessCookie = addAccessCookie("access_token",  access,  accessTtl,  "/");
+//        ResponseCookie refreshCookie = addCookie("refresh_token", refresh, refreshTtl, "/api/auth/oauth2/refresh");
+        ResponseCookie refreshCookie = addRefreshCookie("refresh_token", refresh, refreshTtl, "/api/auth/oauth2/refresh");
 
-        log.debug("check1---\n" + tokenDTO.getAccessToken());
-        log.debug(tokenDTO.getRefreshToken().toString());
-
-//        return new ResponseCookie[]{ accessCookie, refreshCookie };
-        return tokenDTO;
+        return new ResponseCookie[]{ accessCookie, refreshCookie };
     }
 
 
@@ -166,8 +157,7 @@ public class TokenService {
      * @param old  클라이언트가 보낸 refresh_token 문자열(JWT)
      * @return [0] = 새 access_token 쿠키, [1] = 새 refresh_token 쿠키
      */
-//    public ResponseCookie[] rotateRefresh(String old) {
-    public TokenDTO rotateRefresh(String old) {
+    public ResponseCookie[] rotateRefresh(String old) {
         if (old == null) {
             log.error("Missing refresh token");
             throw new GlobalCommonException(GlobalErrorCode.REFRESH_TOKEN_EXPIRED);
@@ -256,8 +246,21 @@ public class TokenService {
                 .compact();
     }
 
+    /** HttpOnlyFalse, Secure, SameSite=Lax 쿠키 추가 */
+    private ResponseCookie addAccessCookie(String name, String value,
+                                     Duration ttl, String path) {
+        ResponseCookie cookie = ResponseCookie.from(name, value)
+//                .httpOnly(true)
+//                .secure(true)
+                .sameSite("Lax")
+                .path(path)
+                .maxAge(ttl)
+                .build();
+        return cookie;
+    }
+
     /** HttpOnly, Secure, SameSite=Lax 쿠키 추가 */
-    private ResponseCookie addCookie(String name, String value,
+    private ResponseCookie addRefreshCookie(String name, String value,
                            Duration ttl, String path) {
         ResponseCookie cookie = ResponseCookie.from(name, value)
                 .httpOnly(true)
@@ -285,29 +288,5 @@ public class TokenService {
                 .sameSite("Lax")
                 .build();
         return cookie;
-    }
-
-    public TokenDTO login(Authentication authentication) {
-        OAuth2AuthenticationToken oauthToken =
-                (OAuth2AuthenticationToken) authentication;
-        String email = oauthToken.getPrincipal().getAttribute("email");
-
-        MemberDTO member = memberService.getMemberByEmail(email);
-
-        Set<MemberRole> rolesSet = member.getMemberRole();
-
-        List<String> roles = rolesSet.stream()
-                .map(MemberRole::name)
-                .collect(Collectors.toList());
-
-        // 3) 토큰 발급: 서비스에서 두 개의 ResponseCookie 반환
-//        ResponseCookie[] cookies = issueTokens(
-//                email,
-//                member.getNickname(),
-//                String.valueOf(member.getId()),
-//                roles,
-//                member.getProfileColor().name()
-//        );
-        return issueTokens(email, member.getNickname(), String.valueOf(member.getId()), roles, member.getProfileColor().name());
     }
 }
