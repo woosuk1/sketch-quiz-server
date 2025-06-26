@@ -50,6 +50,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
+        if ("/api/auth/oauth2/refresh".equals(request.getRequestURI())) {
+            // 그냥 filter chain pass (아무 인증도 안함)
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         // 1) HttpOnly 쿠키에서 액세스 토큰을 꺼냅니다.
 //        String token = WebUtils.getCookie(request, "access_token") != null
 //                ? Objects.requireNonNull(WebUtils.getCookie(request, "access_token")).getValue()

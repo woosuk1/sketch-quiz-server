@@ -41,6 +41,7 @@ public class CorsConfig implements WebMvcConfigurer {
 //        }
         config.addAllowedOrigin("http"+allowedOrigins);
         config.addAllowedOrigin("https"+allowedOrigins);
+        config.addAllowedOrigin("http://localhost:3000");
 
         // 허용할 HTTP 메서드
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));

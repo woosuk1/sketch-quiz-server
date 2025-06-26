@@ -124,7 +124,8 @@ public class SecurityConfig {
                                 "/api/auth/logout",
                                 "/api/auth/oauth2/refresh",
                                 "/login/oauth2/code/kakao",      // 카카오 OAuth2 콜백 (경로는 실제 리다이렉트 URI에 따라 다를 수 있음)
-                                "/oauth2/authorization/kakao"    // 카카오 OAuth2 로그인 시작 (프론트에서 이 경로로 요청)
+                                "/oauth2/authorization/kakao",    // 카카오 OAuth2 로그인 시작 (프론트에서 이 경로로 요청)
+                                "/ws/**" // handshake 시에는 인증 정보를 붙이지 못하므로
                         ).permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 
